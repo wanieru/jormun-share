@@ -1,0 +1,37 @@
+{
+  "name": "jormun-share",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node -r source-map-support/register dist/index.js",
+    "build": "webpack --mode=production",
+    "watch": "webpack --mode=development --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wanieru/jormun-share.git"
+  },
+  "author": "wanieru",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wanieru/jormun-share/issues"
+  },
+  "homepage": "https://github.com/wanieru/jormun-share#readme",
+  "dependencies": {
+    "@types/jquery": "^3.5.14",
+    "@types/node": "^17.0.23",
+    "@types/qrcode": "^1.5.0",
+    "jormun-sdk": "https://github.com/wanieru/jormun-sdk.git",
+    "preact": "^10.7.2",
+    "qrcode": "^1.5.1",
+    "react-router": "^6.3.0",
+    "react-router-dom": "^6.3.0",
+    "reactstrap": "^9.1.2",
+    "source-map-support": "^0.5.21",
+    "ts-loader": "^9.4.1",
+    "typescript": "^4.6.3",
+    "webpack": "^5.72.1",
+    "webpack-cli": "^4.9.2"
+  }
+}
