@@ -12,6 +12,7 @@ import { Room } from "../../../Hub/DataController";
 import { Hub } from "../../../Hub/Hub";
 import { Currencies } from "../../../Utils/Currencies";
 import { Strings } from "../../../Utils/Strings";
+import { B64URL } from "../Utility/B64URL";
 import { BridgeParams } from "../Utility/Bridge";
 import { Fas } from "../Utility/Icon";
 import { JoinRoomModal, JoinRoomModalBridge } from "./Home/JoinRoomModal";
@@ -105,7 +106,7 @@ export class HomeRoute extends Component<HomeRouteProps, HomeRouteState>
         if (!room.root) return;
         const parsed = Key.parse(room.info.roomRootKey, -1);
         if (!parsed) return;
-        this.setState({ redirect: `/room/${btoa(room.info.host)}/${parsed.userId}/${room.root.roomId}` })
+        this.setState({ redirect: `/room/${B64URL.ToBase64(room.info.host)}/${parsed.userId}/${room.root.roomId}` })
     }
     private clickRoomRemove = async (room: Room, e: JSX.TargetedMouseEvent<HTMLElement>) =>
     {

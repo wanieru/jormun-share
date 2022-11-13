@@ -30,11 +30,12 @@ import { ChangeRoomNameModal, ChangeRoomNameModalBridge } from "./Room/ChangeRoo
 import { AddUserModal, AddUserModalBridge } from "./Room/AddUserModal";
 import { Strings } from "../../../Utils/Strings";
 import { Key } from "jormun-sdk/dist/Key";
+import { B64URL } from "../Utility/B64URL";
 
 export function RoomRouteRoot(p: { hub: Hub })
 {
     const params = useParams();
-    return <RoomRoute hub={p.hub} roomId={params.roomId ?? ""} userId={parseInt(params.userId ?? "-1")} host={atob(params.host ?? "")} />
+    return <RoomRoute hub={p.hub} roomId={params.roomId ?? ""} userId={parseInt(params.userId ?? "-1")} host={B64URL.FromBase64(params.host ?? "") ?? ""} />
 }
 
 export interface RoomRouteProps

@@ -9,6 +9,7 @@ import { Hub } from "./Hub";
 import { RemoteRoomController } from "./RemoteRoomController";
 import * as QRCode from "qrcode";
 import { Room } from "./DataController";
+import { B64URL } from "../www/Components/Utility/B64URL";
 
 export class LocalRoomController
 {
@@ -145,7 +146,7 @@ export class LocalRoomController
     public getJoinHash(host: string, key: string)
     {
         if (host.startsWith("https://")) host = host.substring("https://".length);
-        host = btoa(host);
+        host = B64URL.ToBase64(host);
         const parsed = Key.parse(key, -1);
         if (!parsed) return "";
         if (!parsed.fragment.startsWith("room_")) return "";
