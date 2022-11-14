@@ -26,7 +26,7 @@ export class NavBar extends Component<NavBarProps, NavBarState>
     {
         return <>
             <Navbar fixed="bottom" container="sm" color="primary" dark expand="lg">
-                <Link className="navbar-brand" to={`/`}><Fas money-bill-transfer /> Share</Link>
+                <Link className="navbar-brand" to={`/`}><Fas money-bill-transfer /> {Hub.appTitle}</Link>
                 <span className="d-lg-none"><SyncButton hub={p.hub} /></span>
                 <NavbarToggler onClick={() => this.toggleOpen()} />
                 <Collapse isOpen={this.state.open} navbar>

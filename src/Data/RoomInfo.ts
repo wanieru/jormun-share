@@ -8,8 +8,6 @@ export interface RoomInfo
     selectedUserId?: UserId;
     cache?: {
         name: string;
-        joinLink: string;
-        joinQR: string;
         users: {
             userId: string;
             name: string;

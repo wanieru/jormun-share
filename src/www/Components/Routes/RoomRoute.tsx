@@ -51,6 +51,7 @@ export class RoomRouteState
     sendMessageStatus = "";
     refreshStatus = "";
     clearSelectedUserStatus = "";
+    qrCode = { link: "", done: false, qr: "" }
     chatMessage = new TextboxBridge();
     settingsOpen = false;
     joinInfoOpen = false;
@@ -126,6 +127,7 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
     public render(p: RoomRouteProps, s: RoomRouteState): ComponentChild
     {
         const room = this.getRoom();
+
         if (!room)
         {
             if (s.redirectToJoin) return <Navigate to={this.props.hub.localRoomController.getJoinHash(p.host, new Key(Hub.app, p.userId, `room_${p.roomId}`).stringifyLocal())} />;
@@ -219,14 +221,16 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
     {
         const room = this.getRoom();
         if (!room) return <></>;
+        const joinLink = this.props.hub.localRoomController.getJoinURL(room.info.host, room.info.roomRootKey);
+        this.generateQrCode(joinLink);
         const key = Key.parse(room.info.roomRootKey, -1);
         return <Modal isOpen={this.state.joinInfoOpen} toggle={() => this.setState({ joinInfoOpen: !this.state.joinInfoOpen })}>
             <ModalHeader toggle={() => this.setState({ joinInfoOpen: !this.state.joinInfoOpen })}>
                 Join Info
             </ModalHeader>
             <ModalBody>
-                {room.info.cache?.joinLink && <Textbox label="Join Link" type="text" bridge={{ value: room.info.cache.joinLink }} setBridge={() => { }} />}
-                {room.info.cache?.joinQR && <div><img src={room.info.cache.joinQR} style={{ width: "100%" }} /></div>}
+                {joinLink && <Textbox label="Join Link" type="text" bridge={{ value: joinLink }} setBridge={() => { }} />}
+                {this.state.qrCode.link === joinLink && this.state.qrCode.done && <div><img src={this.state.qrCode.qr} style={{ width: "100%" }} /></div>}
                 <h5>Manual Join</h5>
                 <Textbox label="Host" type="text" bridge={{ value: room.info.host }} setBridge={() => { }} />
                 <Textbox label="User Id" type="text" bridge={{ value: key?.userId.toString() ?? "??" }} setBridge={() => { }} />
@@ -234,6 +238,15 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
             </ModalBody>
         </Modal>
     };
+    private generateQrCode = async (joinLink: string) =>
+    {
+        if (this.state.qrCode.link === joinLink) return;
+        if (this.state.qrCode.link) await Wait.until(() => this.state.qrCode.done);
+        this.state.qrCode.link = joinLink;
+        this.state.qrCode.done = false;
+        this.state.qrCode.qr = await this.props.hub.localRoomController.getJoinQRCode(joinLink);
+        this.state.qrCode.done = true;
+    }
     private sendMessage = async () =>
     {
         const msg = this.state.chatMessage.value;

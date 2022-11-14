@@ -2,7 +2,7 @@ import { Jormun, JormunRemote } from "jormun-sdk/dist/Jormun";
 import { Key } from "jormun-sdk/dist/Key";
 import { Component, ComponentChild, JSX } from "preact";
 import { JSXInternal } from "preact/src/jsx";
-import { Navigate } from "react-router";
+import { Link } from "react-router-dom";
 import { Button, Card, CardBody, CardHeader, CardText, Container } from "reactstrap";
 import { RoomInfo } from "../../../Data/RoomInfo";
 import { RoomRoot } from "../../../Data/RoomRoot";
@@ -30,7 +30,6 @@ export class HomeRouteState
     joinRoomModal = new JoinRoomModalBridge();
     destroyStatus = "";
     leaveStatus = "";
-    redirect = "";
 }
 
 export class HomeRoute extends Component<HomeRouteProps, HomeRouteState>
@@ -38,9 +37,15 @@ export class HomeRoute extends Component<HomeRouteProps, HomeRouteState>
     public state = new HomeRouteState();
     public componentDidMount()
     {
+        this.fetch();
     }
     public componentWillUnmount()
     {
+    }
+    private async fetch()
+    {
+        await this.props.hub.dataController.fetchDirectory(() => { });
+        this.props.hub.update();
     }
 
     public render(p: HomeRouteProps, s: HomeRouteState): ComponentChild
@@ -58,7 +63,7 @@ export class HomeRoute extends Component<HomeRouteProps, HomeRouteState>
                             <Button color="primary" onClick={() => JoinRoomModal.open({ bridge: s.joinRoomModal, setBridge: b => this.setState({ joinRoomModal: b }) })}><Fas plus /> Join Room</Button>
                             <span> </span>
                             <Button color="primary" disabled={canCreateRoom ? undefined : true} onClick={() => NewRoomModal.open({ bridge: s.newRoomModal, setBridge: b => this.setState({ newRoomModal: b }) })}><Fas plus /> Create Room</Button>
-                            <div>{!canCreateRoom && `To create a room, you need to be logged in to a Jormun server. See the server-tab for more info.`}</div>
+                            <div>{!canCreateRoom && <>To create a room, you need to be logged in to a Jormun Sync Server. <Link to="/server">See the server-tab for more info.</Link></>}</div>
                         </CardText>
                     </Card>
                 </Container>
@@ -68,7 +73,6 @@ export class HomeRoute extends Component<HomeRouteProps, HomeRouteState>
             <JoinRoomModal hub={p.hub} bridge={s.joinRoomModal} setBridge={b => this.setState({ joinRoomModal: b })} />
             <StatusModal header="Leaving..." status={s.leaveStatus} />
             <StatusModal header="Deleting..." status={s.destroyStatus} />
-            {s.redirect && <Navigate to={s.redirect} />}
         </>;
     }
     private roomCard = (p: { room: Room }): JSXInternal.Element =>
@@ -106,7 +110,7 @@ export class HomeRoute extends Component<HomeRouteProps, HomeRouteState>
         if (!room.root) return;
         const parsed = Key.parse(room.info.roomRootKey, -1);
         if (!parsed) return;
-        this.setState({ redirect: `/room/${B64URL.ToBase64(room.info.host)}/${parsed.userId}/${room.root.roomId}` })
+        this.props.hub.navigation.setTarget(`/room/${B64URL.ToBase64(room.info.host)}/${parsed.userId}/${room.root.roomId}`);
     }
     private clickRoomRemove = async (room: Room, e: JSX.TargetedMouseEvent<HTMLElement>) =>
     {

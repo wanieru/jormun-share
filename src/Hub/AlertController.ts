@@ -1,4 +1,5 @@
 import { AlertContent } from "jormun-sdk/dist/Jormun";
+import { Wait } from "../Utils/Wait";
 import { Hub } from "./Hub";
 
 export class AlertController
@@ -76,7 +77,8 @@ export class AlertController
             else
             {
                 const resolveWrapper = () => resolve(obj.options.length > 0 ? 0 : -1);
-                this.model.view.alerts.toasts.unshift({ content: obj, resolve: resolveWrapper, time: Date.now(), timeStr: AlertController.secsAgoToStr(0) });
+                this.model.view.alerts.toasts.unshift({ content: obj, resolve: () => { }, time: Date.now(), timeStr: AlertController.secsAgoToStr(0) });
+                Wait.secs(0.1).then(() => resolveWrapper());
             }
             this.model.update();
         });

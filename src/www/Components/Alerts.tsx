@@ -4,7 +4,7 @@ import { Hub } from "../../Hub/Hub";
 
 export function Toasts(p: { hub: Hub })
 {
-    return <Container style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>{
+    return <Container style={{ position: "absolute", bottom: "70px", left: 0, right: 0 }}>{
         p.hub.view.alerts.toasts.map((t, idx) =>
             <Toast className="mx-auto mb-3" isOpen={true}>
                 <ToastHeader toggle={() => p.hub.alert.resolveToast(t.content)}>{t.timeStr}</ToastHeader>

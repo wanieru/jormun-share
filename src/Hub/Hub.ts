@@ -4,11 +4,13 @@ import { View } from "../www/View/View";
 import { AlertController } from "./AlertController";
 import { DataController } from "./DataController";
 import { LocalRoomController } from "./LocalRoomController";
+import { NavigationController } from "./NavigationController";
 import { RemoteRoomController } from "./RemoteRoomController";
 import { ServerController } from "./ServerController";
 export class Hub
 {
     public static app: string = "share";
+    public static appTitle: string = "Billshare";
 
     public jormun: Jormun;
 
@@ -17,6 +19,7 @@ export class Hub
     public localRoomController: LocalRoomController;
     public remoteRoomController: RemoteRoomController;
     public dataController: DataController;
+    public navigation: NavigationController;
 
     public onUpdate: ((s: View) => void)[] = [];
     public view: View = new View();
@@ -33,6 +36,7 @@ export class Hub
         this.localRoomController = new LocalRoomController(this);
         this.remoteRoomController = new RemoteRoomController(this);
         this.dataController = new DataController(this);
+        this.navigation = new NavigationController(this);
 
         this.initialize();
         this.loadAnimation();

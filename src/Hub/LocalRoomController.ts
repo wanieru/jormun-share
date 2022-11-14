@@ -7,9 +7,13 @@ import { RoomRoot } from "../Data/RoomRoot";
 import { RoomUserData } from "../Data/RoomUserData";
 import { Hub } from "./Hub";
 import { RemoteRoomController } from "./RemoteRoomController";
-import * as QRCode from "qrcode";
 import { Room } from "./DataController";
 import { B64URL } from "../www/Components/Utility/B64URL";
+
+declare class QRCode
+{
+    public constructor(element: HTMLDivElement, options: { text: string, width: number, height: number, colorDark: string, colorLight: string });
+};
 
 export class LocalRoomController
 {
@@ -42,15 +46,9 @@ export class LocalRoomController
         const room = directory.rooms.find(r => r.host === host && r.roomRootKey === key);
         if (!room) return;
         const original = JSON.stringify(room);
-        if (!room.cache) room.cache = { name: "", users: [], joinLink: "", joinQR: "", timestamp: Date.now(), lastActivity: Date.now() };
+        if (!room.cache) room.cache = { name: "", users: [], timestamp: Date.now(), lastActivity: Date.now() };
         room.cache.name = root.name;
-        const newLink = this.getJoinURL(host, key);
-        if (room.cache.joinLink !== newLink)
-        {
-            room.cache.joinLink = this.getJoinURL(host, key);
-            onStatusChange("Generating QR code...");
-            room.cache.joinQR = await this.getJoinQRCode(host, key);
-        }
+
         const balanceData: Room = {
             info: room,
             fetching: false,
@@ -153,10 +151,12 @@ export class LocalRoomController
         const roomId = parsed.fragment.substring("room_".length);
         return `/join/${host}/${parsed.userId}/${roomId}`;
     }
-    public async getJoinQRCode(host: string, key: string)
+    public async getJoinQRCode(link: string)
     {
-        const link = this.getJoinURL(host, key);
-        return await QRCode.toDataURL(document.createElement("canvas"), link);
+        const element = document.createElement("div");
+        new QRCode(element, { text: link, width: 180, height: 180, colorDark: "#000000", colorLight: "#ffffff" });
+        const canvas = element.querySelector("canvas") as HTMLCanvasElement;
+        return canvas.toDataURL();
     }
     public async setRoomDead(host: string, key: string, dead: boolean)
     {

@@ -28,8 +28,6 @@ export class RemoteRoomController
             cache: {
                 name: "",
                 users: [],
-                joinLink: "",
-                joinQR: "",
                 timestamp: Date.now(),
                 lastActivity: Date.now()
             }

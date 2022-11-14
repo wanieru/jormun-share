@@ -16,9 +16,11 @@ export class Root extends Component<{}, View>
     public hub = new Hub([s => this.setState(s)]);
     render(p: {}, s: View): ComponentChild
     {
+        const navigateTarget = this.hub.navigation.popTarget();
         if (!this.hub.jormun.getStatus().initialized) return <h1 className="text-center mt-5"><LoadAnimation animation={s.root.loadAnimation} /> Loading...</h1>
         return <>
             <HashRouter>
+                {navigateTarget && <Navigate to={navigateTarget} />}
                 <NavBar hub={this.hub} />
                 <div class="container pt-3 pb-3">
                     <Routes>
