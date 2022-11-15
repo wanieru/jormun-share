@@ -185,11 +185,11 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
         while (this.bridge.remainingDebt > 0)
         {
             const nonMaxedNonLockedCreditors = this.bridge.creditors.filter(c => !c.ignored && !c.locked && c.amount < c.max);
-            if(nonMaxedNonLockedCreditors.length < 1) break;
-            let minMax : number | null = null;
+            if (nonMaxedNonLockedCreditors.length < 1) break;
+            let minMax: number | null = null;
             let averageDebt = this.bridge.remainingDebt / nonMaxedNonLockedCreditors.length;
             nonMaxedNonLockedCreditors.forEach(c => minMax = Math.min(minMax ?? c.max, c.max));
-            let fillAmount = Math.min(averageDebt, minMax);
+            let fillAmount = Math.min(averageDebt, minMax ?? averageDebt);
             nonMaxedNonLockedCreditors.forEach(c =>
             {
                 const oldAmount = c.amount;
