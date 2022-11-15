@@ -184,16 +184,18 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
         });
         while (this.bridge.remainingDebt > 0)
         {
-            let nonLockedNonMaxedCreditorCount = this.bridge.creditors.filter(c => !c.ignored && !c.locked && c.amount < c.max).length;
-            if(nonLockedNonMaxedCreditorCount < 1) break;
-            this.bridge.creditors.forEach(c =>
+            const nonMaxedNonLockedCreditors = this.bridge.creditors.filter(c => !c.ignored && !c.locked && c.amount < c.max);
+            if(nonMaxedNonLockedCreditors.length < 1) break;
+            let minMax : number | null = null;
+            let averageDebt = this.bridge.remainingDebt / nonMaxedNonLockedCreditors.length;
+            nonMaxedNonLockedCreditors.forEach(c => minMax = Math.min(minMax ?? c.max, c.max));
+            let fillAmount = Math.min(averageDebt, minMax);
+            nonMaxedNonLockedCreditors.forEach(c =>
             {
-                if (!c.locked && !c.ignored && c.amount < c.max)
-                {
-                    c.amount = Math.min(c.max, this.bridge.remainingDebt / nonLockedNonMaxedCreditorCount);
-                    this.bridge.remainingDebt -= c.amount;
-                    nonLockedNonMaxedCreditorCount--;
-                }
+                const oldAmount = c.amount;
+                c.amount = Math.min(c.max, c.amount + fillAmount);
+                const delta = c.amount - oldAmount;
+                this.bridge.remainingDebt -= delta;
             });
         }
         this.bridge.remainingDebt = Currencies.parse(this.bridge.remainingDebt, this.bridge.currency.current);
