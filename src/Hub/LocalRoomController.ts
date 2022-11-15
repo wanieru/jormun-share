@@ -36,7 +36,6 @@ export class LocalRoomController
     public async setDirectory(data: RoomDirectory, sync: boolean)
     {
         await (await this.hub.jormun.add("room_directory", data)).set(data);
-        await this.hub.jormun.sync();
     }
     public async createRoomCache(host: string, key: string, root: RoomRoot, users: RoomUserData[] | null, onStatusChange: (status: string) => void)
     {
