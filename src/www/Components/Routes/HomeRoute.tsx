@@ -53,12 +53,12 @@ export class HomeRoute extends Component<HomeRouteProps, HomeRouteState>
         const canCreateRoom = this.props.hub.localRoomController.canCreateRoom();
         const rooms = p.hub.dataController.getRooms();
         return <>
-            <div style={{ paddingBottom: "140px" }}>
+            <div style={{ paddingBottom: "200px" }}>
                 {[...rooms].sort((a, b) => (b.info.cache?.lastActivity ?? 0) - (a.info.cache?.lastActivity ?? 0)).map(r => <this.roomCard room={r} />)}
             </div>
             <div style={{ position: "fixed", bottom: "56px", left: "0", right: "0" }}>
                 <Container>
-                    <Card body>
+                    <Card body style={{ paddingBottom: "50px" }}>
                         <CardText style={{ textAlign: "center" }}>
                             <Button color="primary" onClick={() => JoinRoomModal.open({ bridge: s.joinRoomModal, setBridge: b => this.setState({ joinRoomModal: b }) })}><Fas plus /> Join Room</Button>
                             <span> </span>
