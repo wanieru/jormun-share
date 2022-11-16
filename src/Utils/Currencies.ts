@@ -181,13 +181,14 @@ export class Currencies
         if (!currency) return 0.01;
         return 0.1 ** currency.decimals;
     }
-    public static parse(amount: number | string, iso: string)
+    public static parse(amount: number | string, iso: string, decimalsOverride = -1)
     {
         if (typeof amount === "string") amount = parseFloat(amount);
         if (Number.isNaN(amount)) amount = 0;
         const currency = Currencies.currencies.find(c => c.iso === iso);
         if (!currency) return amount;
-        return Numbers.round(amount, currency.decimals);
+        if (decimalsOverride < 0) decimalsOverride = currency.decimals;
+        return Numbers.round(amount, decimalsOverride);
     }
     public static appromixatelySame(a: number | string, b: number | string, iso: string)
     {

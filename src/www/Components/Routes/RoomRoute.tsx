@@ -155,7 +155,7 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
                             <div><b>{Strings.elips(room?.root?.name ?? room?.info.cache?.name ?? "", 30)}</b></div>
                             <div>{Strings.elips(selectedUser?.userData?.name ?? "", 30)}</div>
                         </CardHeader>
-                        <CardBody style={{ textAlign: "center" }}>
+                        <CardBody style={{ textAlign: "center", paddingBottom: "50px" }}>
                             <div>
                                 <span style={{ float: "right" }}><Button size="xl" color="primary" title="Send message" onClick={() => this.sendMessage()}><Fas paper-plane /></Button></span>
                                 <div style={{ width: "100%", paddingRight: "50px" }}><Textbox placeholder="Write a message..." type="text" bridge={s.chatMessage} setBridge={b => this.setState({ chatMessage: b })} /></div>
@@ -211,7 +211,7 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
             <ModalBody>
                 <Button className="mb-3" color="primary" block onClick={() => this.setState({ joinInfoOpen: true })}><Fas tag /> Show Join Info</Button>
                 <Button className="mb-3" color="primary" block onClick={() => this.clearSelectedUser()}><Fas user-gear /> Change User</Button>
-                <Button className="mb-3" color="primary" block onClick={() => ChangeNameModal.open({ bridge: this.state.changeNameModal, setBridge: b => this.setState({ changeNameModal: b }) })}><Fas user-pen /> Change Name</Button>
+                <Button className="mb-3" color="primary" block onClick={() => ChangeNameModal.open({ bridge: this.state.changeNameModal, setBridge: b => this.setState({ changeNameModal: b }) })}><Fas user-pen /> User Profile</Button>
                 {room?.isMine && <Button className="mb-3" color="primary" block onClick={() => AddUserModal.open({ bridge: this.state.addUserModal, setBridge: b => this.setState({ addUserModal: b }) })}><Fas user-plus /> Add user</Button>}
                 {room?.isMine && <Button className="mb-3" color="primary" block onClick={() => ChangeRoomNameModal.open({ bridge: this.state.changeRoomNameModal, setBridge: b => this.setState({ changeRoomNameModal: b }) })}><Fas pen-to-square /> Edit Room Name</Button>}
             </ModalBody>

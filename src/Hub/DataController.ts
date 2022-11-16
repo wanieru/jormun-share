@@ -233,13 +233,14 @@ export class DataController
 
         await this.saveUser(host, key, roomAndUser, s => onStatusChange(s));
     }
-    public async changeUsername(host: string, key: string, newName: string, onStatusChange: (status: string) => void)
+    public async changeUserInfo(host: string, key: string, newName: string, phoneNumber: string | undefined, onStatusChange: (status: string) => void)
     {
         const roomAndUser = this.getRoomAndUser(host, key);
         if (!roomAndUser?.room || !roomAndUser?.userData || !roomAndUser?.userInfo || !roomAndUser.room.root || !roomAndUser.room.users) return;
 
         if (!newName || newName.length > 25) return;
         roomAndUser.userData.name = newName;
+        roomAndUser.userData.phoneNumber = phoneNumber;
 
         await this.saveUser(host, key, roomAndUser, s => onStatusChange(s));
     }

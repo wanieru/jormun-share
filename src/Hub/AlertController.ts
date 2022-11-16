@@ -70,7 +70,7 @@ export class AlertController
         }
         return await new Promise<number>(resolve =>
         {
-            if (obj.options.length > 1)
+            if (obj.options.length > 0)
             {
                 this.model.view.alerts.questions.push({ content: obj, resolve: resolve });
             }

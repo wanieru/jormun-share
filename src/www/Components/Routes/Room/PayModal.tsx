@@ -4,6 +4,7 @@ import { Component, ComponentChild } from "preact";
 import { Button, Modal, ModalBody, ModalHeader } from "reactstrap";
 import { NewTransactionData, RoomTransaction } from "../../../../Data/RoomTransaction";
 import { RoomTransactionDebtor } from "../../../../Data/RoomTransactionDebtor";
+import { RoomUserData } from "../../../../Data/RoomUserData";
 import { Room } from "../../../../Hub/DataController";
 import { Hub } from "../../../../Hub/Hub";
 import { Currencies } from "../../../../Utils/Currencies";
@@ -11,6 +12,7 @@ import { Strings } from "../../../../Utils/Strings";
 import { Wait } from "../../../../Utils/Wait";
 import { Dropdown, DropdownBridge, DropdownOption } from "../../Input/Dropdown";
 import { Textbox, TextboxBridge } from "../../Input/Textbox";
+import { Toggle } from "../../Input/Toggle";
 import { Bridge, BridgeParams } from "../../Utility/Bridge";
 import { Far, Fas } from "../../Utility/Icon";
 
@@ -26,7 +28,7 @@ export interface PayCreditor
 export interface PayModalProps
 {
     hub: Hub
-    room: Room
+    room: Room,
 }
 export class PayModalState
 {
@@ -34,7 +36,10 @@ export class PayModalState
 export class PayModalBridge
 {
     opened = false;
-    currency = new DropdownBridge();
+    fromCurrency = new DropdownBridge();
+    toCurrency = new DropdownBridge();
+    convert = false;
+    conversion = new TextboxBridge();
     creditors: PayCreditor[] | null = null;
     remainingDebt: number = 0;
     submitting = false;
@@ -43,6 +48,7 @@ export class PayModalBridge
 
 export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridge>
 {
+    private static convertFromAmount = 100;
     private calculating = false;
     public state = new PayModalState();
     public componentDidMount()
@@ -61,9 +67,9 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
     protected renderer(p: PayModalProps, s: PayModalState, b: PayModalBridge): ComponentChild
     {
         const negativeCurrencies = this.negativeCurrencies();
-        if (negativeCurrencies.length > 0 && !negativeCurrencies.map(c => c.currency).includes(b.currency.current))
+        if (negativeCurrencies.length > 0 && !negativeCurrencies.map(c => c.currency).includes(b.fromCurrency.current))
         {
-            b.currency.current = negativeCurrencies[0].currency;
+            b.fromCurrency.current = negativeCurrencies[0].currency;
             b.creditors = null;
         }
         if (!b.creditors) this.recalculateShare();
@@ -75,7 +81,11 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
                     {negativeCurrencies.length == 0 && <b><Fas party-horn /> You don't owe anything!</b>}
                     {negativeCurrencies.length > 0 && <>
                         {this.currencyDropdown(negativeCurrencies.map(c => c.currency))}
-                        <h6 style={{ marginTop: "10px" }}>You owe: {Currencies.formatAmount(-this.balanceInCurrency(), b.currency.current)} <Fas arrow-right /> {Currencies.formatAmount(b.remainingDebt, b.currency.current)}</h6>
+                        {!b.convert && <Toggle label="Settle in Different Currency" bridge={{ checked: false }} setBridge={(b) => this.setBridge({ convert: b.checked, toCurrency: { current: this.props.hub.dataController.getLastCurrency() } })} />}
+                        {b.convert && <Textbox prefix={
+                            <Dropdown style={{ maxWidth: "100px" }} options={this.getCurrencies()} bridge={this.bridge.toCurrency} setBridge={b => { this.setBridge({ toCurrency: b }); }} />
+                        } type="number" placeholder={`${PayModal.convertFromAmount} ${b.fromCurrency.current} = ?? ${b.toCurrency.current}`} label="Currency To Pay In" bridge={b.conversion} setBridge={b => this.setBridge({ conversion: b })} suffix={<Button color="primary" onClick={() => this.openConversionRate()}><Fas arrow-trend-up /></Button>} />}
+                        <h6 style={{ marginTop: "10px" }}>You owe: {Currencies.formatAmount(-this.balanceInCurrency() * this.getPayScaling(), this.getPayCurrency())} <Fas arrow-right /> {Currencies.formatAmount(b.remainingDebt * this.getPayScaling(), this.getPayCurrency())}</h6>
                         <h5>Share</h5>
                         {b.creditors && b.creditors.map(u => this.creditorElement(u))}
                         <div style={{ float: "right" }}>
@@ -89,18 +99,62 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
             </Modal>
         </>;
     }
+    private openConversionRate = () =>
+    {
+        window.open(`https://duckduckgo.com/?ia=currency&q=${PayModal.convertFromAmount}+${this.bridge.fromCurrency.current}+${this.bridge.toCurrency.current}`, "_blank");
+    }
+    private getPayCurrency()
+    {
+        return this.bridge.convert && !!this.bridge.toCurrency.current ? this.bridge.toCurrency.current : this.bridge.fromCurrency.current;
+    }
+    private getPayScaling()
+    {
+        if (!this.bridge.convert || !this.bridge.toCurrency.current) return 1;
+        const toCurrency = this.bridge.fromCurrency.current;
+        const fromAmount = PayModal.convertFromAmount;
+        const toAmount = Currencies.parse(this.bridge.conversion.value, toCurrency, 10);
+        if (toAmount === 0) return 1;
+        const scale = toAmount / fromAmount;
+        return scale;
+    }
     private creditorElement = (user: PayCreditor) =>
     {
+        const userData = this.props.room.users?.find(u => u.userId === user.user);
         const selected = !user.ignored
         const locked = selected && user.locked
         const suffix = <>
-            <div className="text-primary" style={{ fontSize: "2em", marginLeft: "10px", cursor: "pointer" }} onClick={() => this.toggleUserSelectedState(user)}>
+            {this.getPayCurrency() === "DKK" && selected && !!userData?.phoneNumber && <div onClick={() => this.mobilePay(user, userData)} style={{ cursor: "pointer", marginLeft: "5px", paddingTop: "8px" }}>
+                <img src="./www/img/mobilepay.png" width={32} height={32}></img>
+            </div>}
+            <div className="text-primary" style={{ fontSize: "2em", marginLeft: "5px", cursor: "pointer" }} onClick={() => this.toggleUserSelectedState(user)}>
                 {!selected && <Far circle />}
                 {selected && !locked && <Fas circle-check />}
                 {locked && <Fas lock />}
             </div>
         </>
-        return <Textbox disabled={!selected || undefined} prefix={`${Strings.elips(user.name, 10)}: ${Currencies.formatAmount(user.max, this.bridge.currency.current)}`} suffix={suffix} type="number" min={0.01} decimals={2} bridge={{ value: user.amount.toString() ?? "-" }} setBridge={a => this.changeUserAmount(user, a.value)} />
+        return <Textbox disabled={!selected || undefined} prefix={`${Strings.elips(user.name, 10)}: ${Currencies.formatAmount(user.max * this.getPayScaling(), this.getPayCurrency())}`} suffix={suffix} type="number" min={0.01} decimals={2} bridge={{ value: (Currencies.parse(user.amount * this.getPayScaling(), this.getPayCurrency())).toString() }} setBridge={a => this.changeUserAmount(user, parseFloat(a.value) / this.getPayScaling())} />
+    }
+    private async mobilePay(user: PayCreditor, userData: RoomUserData)
+    {
+        if (!this.bridge.creditors) return;
+        if (!userData.phoneNumber) return;
+        const amount = Currencies.parse(user.amount * this.getPayScaling(), this.getPayCurrency());
+        await this.props.hub.jormun.ask("MobilePay", `Make sure the money is going to the right person before transferring any money!`, ["Open MobilePay"]);
+        window.open(`mobilepay://send?phone=${userData.phoneNumber ?? ""}&comment=${Hub.appTitle}&amount=${amount}`, "_blank");
+        const success = (await this.props.hub.jormun.ask("MobilePay", "Did the money transfer go through?", ["Yes", "No"])) === 0;
+        if (!success) return;
+        user.locked = true;
+        user.ignored = false;
+        for (const creditor of this.bridge.creditors)
+        {
+            if (creditor === user) continue;
+            creditor.locked = false;
+            creditor.ignored = true;
+        }
+        this.recalculateShare();
+        this.setBridge({ creditors: this.bridge.creditors });
+        await Wait.secs(0);
+        await this.pay();
     }
     private toggleUserSelectedState = (user: PayCreditor) =>
     {
@@ -109,10 +163,10 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
         this.recalculateShare();
         this.setBridge({ creditors: this.bridge.creditors });
     };
-    private changeUserAmount = (user: PayCreditor, amount: string) =>
+    private changeUserAmount = (user: PayCreditor, amount: number) =>
     {
         if (user.ignored) return;
-        user.amount = Currencies.parse(amount, this.bridge.currency.current);
+        user.amount = Currencies.parse(amount, this.bridge.fromCurrency.current);
         user.locked = true;
 
         this.recalculateShare();
@@ -120,7 +174,7 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
     };
     private currencyDropdown(filter: string[])
     {
-        return <Dropdown initial={filter[0] ?? this.props.hub.dataController.getLastCurrency()} options={this.getCurrencies().filter(c => filter.length < 1 || filter.includes(c.key))} bridge={this.bridge.currency} setBridge={b => { this.setBridge({ currency: b, creditors: null }); }} />;
+        return <Dropdown label="Currency To Settle" initial={filter[0] ?? this.props.hub.dataController.getLastCurrency()} options={this.getCurrencies().filter(c => filter.length < 1 || filter.includes(c.key))} bridge={this.bridge.fromCurrency} setBridge={b => { this.setBridge({ fromCurrency: b, creditors: null }); }} />;
     }
     private getCurrencies(): DropdownOption[]
     {
@@ -142,7 +196,7 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
     }
     private balanceInCurrency = () =>
     {
-        return this.negativeCurrencies().find(c => c.currency === this.bridge.currency.current)?.balance ?? 0;
+        return this.negativeCurrencies().find(c => c.currency === this.bridge.fromCurrency.current)?.balance ?? 0;
     }
 
     private recalculateShare = async () =>
@@ -154,7 +208,7 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
 
         if (!this.bridge.creditors)
         {
-            const greenUsers = this.props.room?.balances?.filter(u => (u.balances.find(c => c.currency === this.bridge.currency.current)?.balance ?? 0) > 0) ?? [];
+            const greenUsers = this.props.room?.balances?.filter(u => (u.balances.find(c => c.currency === this.bridge.fromCurrency.current)?.balance ?? 0) > 0) ?? [];
             this.bridge.creditors = greenUsers.map<PayCreditor>(u =>
             {
                 return {
@@ -163,7 +217,7 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
                     amount: 0,
                     locked: false,
                     ignored: false,
-                    max: u.balances.find(c => c.currency === this.bridge.currency.current)?.balance ?? 0
+                    max: u.balances.find(c => c.currency === this.bridge.fromCurrency.current)?.balance ?? 0
                 }
             });
         }
@@ -198,8 +252,8 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
                 this.bridge.remainingDebt -= delta;
             });
         }
-        this.bridge.remainingDebt = Currencies.parse(this.bridge.remainingDebt, this.bridge.currency.current);
-        this.bridge.creditors.forEach(c => c.amount = Currencies.parse(c.amount, this.bridge.currency.current));
+        this.bridge.remainingDebt = Currencies.parse(this.bridge.remainingDebt, this.bridge.fromCurrency.current);
+        this.bridge.creditors.forEach(c => c.amount = Currencies.parse(c.amount, this.bridge.fromCurrency.current));
 
         this.setBridge({ remainingDebt: this.bridge.remainingDebt, creditors: this.bridge.creditors });
         this.calculating = false;
@@ -214,12 +268,12 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
         for (const creditor of this.bridge.creditors ?? [])
         {
             if (creditor.ignored) continue;
-            if (Currencies.appromixatelySame(creditor.amount, 0, this.bridge.currency.current)) continue;
+            if (Currencies.appromixatelySame(creditor.amount, 0, this.bridge.fromCurrency.current)) continue;
             const transaction: NewTransactionData = {
                 message: "",
                 creditor: info.selectedUserId ?? "",
                 amount: creditor.amount,
-                currency: this.bridge.currency.current,
+                currency: this.bridge.fromCurrency.current,
                 debtors: [{
                     user: creditor.user,
                     locked: false,
@@ -239,6 +293,8 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
 
         params.bridge.creditors = null;
         params.bridge.status = "";
+        params.bridge.conversion = new TextboxBridge();
+        params.bridge.convert = false;
         params.bridge.submitting = false;
 
         params.setBridge(params.bridge);

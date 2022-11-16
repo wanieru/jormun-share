@@ -20,6 +20,7 @@ export class ChangeNameModalBridge
 {
     opened = false;
     newName: TextboxBridge | null = null;
+    phoneNumber: TextboxBridge | null = null;
     submitting = false;
     status = "";
 }
@@ -42,18 +43,22 @@ export class ChangeNameModal extends Bridge<ChangeNameModalProps, ChangeNameModa
 
     protected renderer(p: ChangeNameModalProps, s: ChangeNameModalState, b: ChangeNameModalBridge): ComponentChild
     {
-        if (!b.newName)
+        if (!b.newName || !b.phoneNumber)
         {
             b.newName = new TextboxBridge();
-            b.newName.value = p.room?.users?.find(u => u.userId == p.room.info.selectedUserId)?.name ?? "";
+            b.phoneNumber = new TextboxBridge();
+            const user = p.room?.users?.find(u => u.userId == p.room.info.selectedUserId);
+            b.newName.value = user?.name ?? "";
+            b.phoneNumber.value = user?.phoneNumber ?? "";
         }
         return <>
             <Modal isOpen={b.opened} toggle={this.toggle}>
                 <ModalHeader toggle={this.toggle}>
-                    Change Name
+                    User Profile
                 </ModalHeader>
                 <ModalBody>
                     <Textbox label="New Name" type="text" bridge={b.newName} setBridge={b => this.setBridge({ newName: b })} />
+                    <Textbox label="Phone Number (optional)" type="text" bridge={b.phoneNumber} setBridge={b => this.setBridge({ phoneNumber: b })} />
                     <div>
                         <Button disabled={b.submitting || undefined} onClick={() => this.send()} color="primary" style={{ float: "right" }}><Fas paper-plane /> Save</Button>
                     </div>
@@ -69,7 +74,7 @@ export class ChangeNameModal extends Bridge<ChangeNameModalProps, ChangeNameModa
         this.setBridge({ submitting: true });
         if (!this.bridge.newName?.value) return;
         const info = this.props.room.info;
-        await this.props.hub.dataController.changeUsername(info.host, info.roomRootKey, this.bridge.newName.value, s => this.setBridge({ status: s }));
+        await this.props.hub.dataController.changeUserInfo(info.host, info.roomRootKey, this.bridge.newName.value, this.bridge.phoneNumber?.value, s => this.setBridge({ status: s }));
         this.setBridge({ submitting: false, opened: false, status: "" });
     };
 

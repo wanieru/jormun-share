@@ -202,7 +202,7 @@ export class TransactionModal extends Bridge<TransactionModalProps, TransactionM
 
     private currencyDropdown()
     {
-        return <Dropdown style={{ maxWidth: "85px" }} initial={this.props.hub.dataController.getLastCurrency()} options={this.getCurrencies()} bridge={this.bridge.currency} setBridge={b => { this.setBridge({ currency: b }); this.props.hub.dataController.setLastCurrency(b.current) }} />;
+        return <Dropdown style={{ maxWidth: "100px" }} initial={this.props.hub.dataController.getLastCurrency()} options={this.getCurrencies()} bridge={this.bridge.currency} setBridge={b => { this.setBridge({ currency: b }); this.props.hub.dataController.setLastCurrency(b.current) }} />;
     }
 
     private submit = async () =>
