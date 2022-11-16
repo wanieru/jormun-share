@@ -92,6 +92,7 @@ export class HomeRoute extends Component<HomeRouteProps, HomeRouteState>
                     {p.room.info.dead && <span title={`Couldn't connect to room ${p.room.info.cache?.name} at ${p.room.info.host}`} ><s>{name}</s> <Fas cloud-bolt /></span>}
                 </b></CardHeader>
                 <CardBody>
+                    {canEnter && <Fas style={{ float: "right" }} angle-right />}
                     {relevantBalances.length > 0 && <div style={{ textAlign: "center" }}>
                         <h5>Your balance:</h5>
                         {relevantBalances.map(b => <>
