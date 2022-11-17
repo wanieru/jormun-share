@@ -289,7 +289,6 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
         element.accept = "image/*";
         document.body.appendChild(element);
         element.click();
-        this.setState({ imageProcessingStatus: "Waiting for file..." });
         await new Promise<void>(resolve => 
         {
             element.onchange = () => resolve();
@@ -336,6 +335,7 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
                 while (dataUrl.length > maxSize)
                 {
                     this.setState({ imageProcessingStatus: `Downsizing image to ${width}x${height}...` });
+                    await Wait.secs(0);
                     const canvas = document.createElement("canvas");
                     canvas.width = width;
                     canvas.height = height;
@@ -350,17 +350,26 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
                 }
                 if (dataUrl.length < maxSize)
                 {
+                    await Wait.secs(0.5);
+                    this.setState({ imageProcessingStatus: "" });
+                    await Wait.secs(0.5);
                     this.setState({ submitImagePreview: dataUrl });
                 }
             }
         }
+        await Wait.secs(0);
         this.setState({ imageProcessingStatus: "" });
         element.remove();
     };
     private submitImage = async (room: Room) =>
     {
         if (!room.info.selectedUserId) return;
-        const data = await this.props.hub.localRoomController.saveImage(this.state.submitImagePreview, s => this.setState({ uploadImageStatus: s }));
+        const image = this.state.submitImagePreview;
+        this.setState({ submitImagePreview: "" });
+        await Wait.secs(0.5);
+        this.setState({ uploadImageStatus: "Preparing..." })
+        await Wait.secs(0.5);
+        const data = await this.props.hub.localRoomController.saveImage(image, s => this.setState({ uploadImageStatus: s }));
         if (data)
         {
             const message: NewTransactionData = {
@@ -373,7 +382,8 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
             }
             await this.props.hub.dataController.addTransction(room.info.host, room.info.roomRootKey, message, s => this.setState({ uploadImageStatus: s }));
         }
-        this.setState({ uploadImageStatus: "", submitImagePreview: "" });
+        await Wait.secs(0.5);
+        this.setState({ uploadImageStatus: "" });
     }
     private refresh = async () =>
     {

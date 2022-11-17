@@ -5,6 +5,7 @@ import { View } from "../View/View";
 import { Question, Toasts } from "./Alerts";
 import { NavBar } from "./NavBar";
 import { HomeRoute } from "./Routes/HomeRoute";
+import { ImagesRoute } from "./Routes/ImagesRoute";
 import { JoinRoute } from "./Routes/JoinRoute";
 import { RoomRoute, RoomRouteRoot } from "./Routes/RoomRoute";
 import { ServerRoute } from "./Routes/ServerRoute";
@@ -28,6 +29,7 @@ export class Root extends Component<{}, View>
                         <Route path="/server" element={<ServerRoute hub={this.hub} />} />
                         <Route path="/join/:host/:userId/:roomId" element={<JoinRoute hub={this.hub} />} />
                         <Route path="/room/:host/:userId/:roomId" element={<RoomRouteRoot hub={this.hub} />} />
+                        <Route path="/images" element={<ImagesRoute hub={this.hub} />} />
                     </Routes>
                 </div>
                 <Toasts hub={this.hub} />
