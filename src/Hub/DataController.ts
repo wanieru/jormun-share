@@ -149,6 +149,13 @@ export class DataController
                 creditorBalance.balance += debtor.amount;
             }
         }
+        for(const user of room.balances)
+        {
+            for(const currency of user.balances)
+            {
+                currency.balance = Currencies.parse(currency.balance, currency.currency);
+            }
+        }
     }
     private getUserBalanceObject(room: Room, userId: UserId, currency: string)
     {
