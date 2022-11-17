@@ -57,13 +57,14 @@ export class AlertController
 
     public async handleAlert(obj: AlertContent): Promise<number>
     {
-        if (obj.title === "Syncing")
+        if (obj.title === "Syncing" && this.model.jormun.getStatus().syncing)
         {
             for (let i = 0; i < obj.options.length; i++)
             {
                 if (obj.options[i].startsWith("Remote")) 
                 {
                     console.log("Forcing a remote sync!");
+                    this.model.jormun.sync();
                     return i;
                 }
             }

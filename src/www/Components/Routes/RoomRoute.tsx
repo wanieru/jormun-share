@@ -51,6 +51,8 @@ export class RoomRouteState
     sendMessageStatus = "";
     refreshStatus = "";
     clearSelectedUserStatus = "";
+    imageProcessingStatus = "";
+    uploadImageStatus = "";
     qrCode = { link: "", done: false, qr: "" }
     chatMessage = new TextboxBridge();
     settingsOpen = false;
@@ -62,6 +64,8 @@ export class RoomRouteState
     transactionModal = new TransactionModalBridge();
     addUserModal = new AddUserModalBridge();
     changeRoomNameModal = new ChangeRoomNameModalBridge();
+
+    submitImagePreview = "";
 
     transactionShowLimit = 10;
 
@@ -140,6 +144,7 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
             <div style={{ paddingBottom: "350px" }}>
                 {s.transactionShowLimit < room.fullTransactionList.length && <Button color="light" block className="mb-3" onClick={() => { this.setState({ transactionShowLimit: s.transactionShowLimit + 25 }) }}><Fas caret-up /> Show more...</Button>}
                 {room.users && <TransactionList
+                    hub={p.hub}
                     room={room}
                     limit={s.transactionShowLimit}
                     onEdit={e => TransactionModal.edit({ bridge: s.transactionModal, setBridge: b => this.setState({ transactionModal: b }) }, room.info.selectedUserId ?? "", e)}
@@ -157,9 +162,12 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
                         </CardHeader>
                         <CardBody style={{ textAlign: "center", paddingBottom: "50px" }}>
                             <div>
-                                <span style={{ float: "right" }}><Button size="xl" color="primary" title="Send message" onClick={() => this.sendMessage()}><Fas paper-plane /></Button></span>
-                                <div style={{ width: "100%", paddingRight: "50px" }}><Textbox placeholder="Write a message..." type="text" bridge={s.chatMessage} setBridge={b => this.setState({ chatMessage: b })} /></div>
-
+                                <Textbox placeholder="Write a message..." type="text" bridge={s.chatMessage} setBridge={b => this.setState({ chatMessage: b })} suffix={
+                                    <>
+                                        <Button size="xl" color="primary" title="Send message" onClick={() => this.sendMessage()}><Fas paper-plane /></Button>
+                                        {<Button size="xl" color="primary" disabled={!p.hub.jormun.getStatus().loggedIn} title="Send image" onClick={() => this.chooseImage()}><Fas image /></Button>}
+                                    </>
+                                } />
                             </div>
                             <Button style={bottomButtonStyle} size="xl" color="primary" title="Add outlay" onClick={() => TransactionModal.open({ bridge: s.transactionModal, setBridge: b => this.setState({ transactionModal: b }) }, room.info.selectedUserId ?? "")}><Fas style={{ minWidth: "22.5px" }} receipt /></Button><span> </span>
                             <Button style={bottomButtonStyle} size="xl" color="primary" title="Settle up" onClick={() => PayModal.open({ bridge: s.payModal, setBridge: b => this.setState({ payModal: b }) })}>
@@ -185,6 +193,15 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
             <StatusModal header="Changing user" status={s.clearSelectedUserStatus} />
             <StatusModal header="Sending message..." status={s.sendMessageStatus} />
             <StatusModal header="Refreshing..." status={s.refreshStatus} />
+            <StatusModal header="Loading image..." status={s.imageProcessingStatus} />
+            <StatusModal header="Submitting image..." status={s.uploadImageStatus} />
+            <StatusModal header="Submit image?" status={!!s.submitImagePreview ? <>
+                <img src={s.submitImagePreview} style={{ width: "100%" }} />
+                <div style={{ float: "right", marginTop: "10px" }}>
+                    <Button color="primary" onClick={() => this.setState({ submitImagePreview: "" })}><Fas cancel /> Cancel</Button><span> </span>
+                    <Button color="primary" onClick={() => this.submitImage(room)}><Fas paper-plane /> Submit</Button>
+                </div>
+            </> : ""} close={() => this.setState({ submitImagePreview: "" })} />
         </>;
     }
 
@@ -264,6 +281,100 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
         await Wait.secs(0.1);
         this.setState({ sendMessageStatus: "", chatMessage: { value: "" } });
     };
+    private chooseImage = async () =>
+    {
+        const element = document.createElement("input");
+        element.type = "file";
+        element.style.display = "none";
+        element.accept = "image/*";
+        document.body.appendChild(element);
+        element.click();
+        this.setState({ imageProcessingStatus: "Waiting for file..." });
+        await new Promise<void>(resolve => 
+        {
+            element.onchange = () => resolve();
+        });
+        if (element.files && element.files.length > 0)
+        {
+            const fileReader = new FileReader();
+            const file = element.files[0];
+            fileReader.readAsDataURL(file);
+            this.setState({ imageProcessingStatus: "Loading file..." });
+            await new Promise<void>(resolve => fileReader.onload = () => resolve());
+            let dataUrl = fileReader.result;
+
+
+            if (typeof dataUrl === "string" && !!dataUrl)
+            {
+                const originalImg = document.createElement("img");
+                originalImg.src = dataUrl ?? "";
+                this.setState({ imageProcessingStatus: "Parsing image 1/2..." });
+                await new Promise<void>(resolve => originalImg.onload = () => resolve());
+                const originalImage = new Image();
+                originalImage.src = dataUrl;
+                this.setState({ imageProcessingStatus: "Parsing image 2/2..." });
+                await new Promise<void>(resolve => originalImage.onload = () => resolve());
+
+                const maxDimension = 512;
+                let width = originalImage.width;
+                let height = originalImage.height;
+
+                if (width > maxDimension)
+                {
+                    const scale = maxDimension / width;
+                    width *= scale;
+                    height *= scale;
+                }
+                if (height > maxDimension)
+                {
+                    const scale = maxDimension / height;
+                    width *= scale;
+                    height *= scale;
+                }
+
+                const maxSize = 50000;
+                while (dataUrl.length > maxSize)
+                {
+                    this.setState({ imageProcessingStatus: `Downsizing image to ${width}x${height}...` });
+                    const canvas = document.createElement("canvas");
+                    canvas.width = width;
+                    canvas.height = height;
+                    var ctx = canvas.getContext("2d");
+                    if (!ctx) break;
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = "high"
+                    ctx.drawImage(originalImg, 0, 0, width, height);
+                    dataUrl = canvas.toDataURL(file.type);
+                    width *= 0.9;
+                    height *= 0.9;
+                }
+                if (dataUrl.length < maxSize)
+                {
+                    this.setState({ submitImagePreview: dataUrl });
+                }
+            }
+        }
+        this.setState({ imageProcessingStatus: "" });
+        element.remove();
+    };
+    private submitImage = async (room: Room) =>
+    {
+        if (!room.info.selectedUserId) return;
+        const data = await this.props.hub.localRoomController.saveImage(this.state.submitImagePreview, s => this.setState({ uploadImageStatus: s }));
+        if (data)
+        {
+            const message: NewTransactionData = {
+                amount: 0,
+                debtors: [],
+                creditor: room.info.selectedUserId,
+                message: "",
+                currency: "",
+                image: { key: data.key, host: data.host }
+            }
+            await this.props.hub.dataController.addTransction(room.info.host, room.info.roomRootKey, message, s => this.setState({ uploadImageStatus: s }));
+        }
+        this.setState({ uploadImageStatus: "", submitImagePreview: "" });
+    }
     private refresh = async () =>
     {
         const room = this.getRoom();

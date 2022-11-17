@@ -77,12 +77,17 @@ export class TransactionModal extends Bridge<TransactionModalProps, TransactionM
                     {!b.previewing && b.editingId && new Date(b.editingTransaction?.time ?? 0).toLocaleString()}
                 </ModalHeader>
                 <ModalBody>
-                    <Dropdown disabled={b.previewing || undefined} label="Who's paying?" options={this.getOptions()} bridge={b.creditor} setBridge={b => this.setBridge({ creditor: b })} />
-                    <Textbox disabled={b.previewing || undefined} prefix={this.currencyDropdown()} type="number" decimals={2} min={0.01} label="Amount" bridge={b.amount} setBridge={b => { this.setBridge({ amount: b }); this.recalculateSharing(); }} />
-                    <h5>Share</h5>
-                    {this.props.room?.users?.map(u => this.debtorElement(u))}
-                    <Textbox disabled={b.previewing || undefined} placeholder={b.previewing ? "" : "Write a message..."} type="text" label="Description" bridge={b.message} setBridge={b => this.setBridge({ message: b })} />
-                    {!b.previewing && !this.recalculating && error && <div style={{ textAlign: "right" }} className="text-warning mb-3">{error ?? ""}</div>}
+                    {!b.editingTransaction?.image && <>
+                        <Dropdown disabled={b.previewing || undefined} label="Who's paying?" options={this.getOptions()} bridge={b.creditor} setBridge={b => this.setBridge({ creditor: b })} />
+                        <Textbox disabled={b.previewing || undefined} prefix={this.currencyDropdown()} type="number" decimals={2} min={0.01} label="Amount" bridge={b.amount} setBridge={b => { this.setBridge({ amount: b }); this.recalculateSharing(); }} />
+                        <h5>Share</h5>
+                        {this.props.room?.users?.map(u => this.debtorElement(u))}
+                        <Textbox disabled={b.previewing || undefined} placeholder={b.previewing ? "" : "Write a message..."} type="text" label="Description" bridge={b.message} setBridge={b => this.setBridge({ message: b })} />
+                        {!b.previewing && !this.recalculating && error && <div style={{ textAlign: "right" }} className="text-warning mb-3">{error ?? ""}</div>}
+                    </>}
+                    {!!b.editingTransaction?.image && <>
+                        <img style={{ marginBottom: "10px", width: "100%" }} src={p.hub.dataController.fetchImage(b.editingTransaction.image.host, b.editingTransaction.image.key)} />
+                    </>}
                     {!b.previewing && <div style={{ float: "right" }}>
                         {b.editingId && <><Button disabled={!this.recalculating && !!error} color="danger" onClick={() => this.delete()}><Fas trash /> Delete</Button><span> </span></>}
                         <Button disabled={!this.recalculating && !!error} color="primary" onClick={() => this.submit()}><Fas paper-plane /> {b.editingId ? "Edit" : "Submit"}</Button>
@@ -216,7 +221,6 @@ export class TransactionModal extends Bridge<TransactionModalProps, TransactionM
             debtors: JSON.parse(JSON.stringify(this.bridge.debtors ?? [])),
             currency: this.bridge.currency.current
         };
-        console.log("Submitting message ", data);
         const info = this.props.room.info;
         if (!this.bridge.editingId)
         {
@@ -241,7 +245,7 @@ export class TransactionModal extends Bridge<TransactionModalProps, TransactionM
             amount: 0,
             debtors: [],
             creditor: info.selectedUserId,
-            message: `${user.name} deleted a transaction from ${new Date(old?.time ?? 0).toLocaleString()}.`,
+            message: `${user.name} deleted an entry from ${new Date(old?.time ?? 0).toLocaleString()}.`,
             currency: ""
         }
         await this.props.hub.dataController.removeTransaction(info.host, info.roomRootKey, this.bridge.editingId, s => this.setBridge({ status: s }));

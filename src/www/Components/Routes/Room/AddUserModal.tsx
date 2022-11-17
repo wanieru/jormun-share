@@ -66,7 +66,7 @@ export class AddUserModal extends Bridge<AddUserModalProps, AddUserModalState, A
         if (!room.isMine) return;
         if (!room?.root?.roomId) return;
         this.setBridge({ submitting: true });
-        await this.props.hub.localRoomController.createUsers(room.root.roomId, [this.bridge.newUsername.value], s => this.setBridge({ status: s }));
+        await this.props.hub.localRoomController.createUsers(room.root.roomId, [this.bridge.newUsername.value], true, s => this.setBridge({ status: s }));
         await this.props.hub.dataController.fetchRoom(room.info.host, room.info.roomRootKey, true, true, s => this.setBridge({ status: s }));
         this.setBridge({ submitting: false, opened: false, status: "" });
     };

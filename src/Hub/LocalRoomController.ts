@@ -36,6 +36,7 @@ export class LocalRoomController
     public async setDirectory(data: RoomDirectory, sync: boolean)
     {
         await (await this.hub.jormun.add("room_directory", data)).set(data);
+        if (sync) this.hub.jormun.sync();
     }
     public async createRoomCache(host: string, key: string, root: RoomRoot, users: RoomUserData[] | null, onStatusChange: (status: string) => void)
     {
@@ -132,7 +133,6 @@ export class LocalRoomController
             onStatusChange(`Setting directory...`);
             await this.setDirectory(directory, false);
         }
-        onStatusChange(`Synchronizing...`);
         await this.hub.jormun.sync();
         await this.hub.dataController.fetchDirectory(s => onStatusChange(s));
     }
@@ -203,17 +203,20 @@ export class LocalRoomController
         await this.hub.jormun.sync();
         onStatusChange("Making room root unlisted...");
         await remote.publish([{ key: data.getKey(), publicity: "unlisted" }]);
-        await this.createUsers(roomId, users, s => onStatusChange(s));
+        await this.createUsers(roomId, users, false, s => onStatusChange(s));
         onStatusChange("Fetchin host...");
         const host = (await this.hub.jormun.hashedRemote()).host;
         const rootKey = data.getKey().stringifyRemote(status.userId);
         await this.hub.remoteRoomController.joinRoom(host, rootKey, s => onStatusChange(s));
         await this.hub.dataController.fetchDirectory(s => onStatusChange(s));
     }
-    public async createUsers(roomId: string, usernames: string[], onStatusChange: (status: string) => void)
+    public async createUsers(roomId: string, usernames: string[], syncFirst: boolean, onStatusChange: (status: string) => void)
     {
-        onStatusChange("Synchronizing...");
-        await this.hub.jormun.sync();
+        if (syncFirst)
+        {
+            onStatusChange("Synchronizing...");
+            await this.hub.jormun.sync();
+        }
         const remote = this.hub.jormun.getRemote();
         const roomRootData = this.hub.jormun.me(`room_${roomId}`);
         if (!roomRootData) return;
@@ -296,6 +299,34 @@ export class LocalRoomController
         await this.setDirectory(directory, true);
         await this.hub.dataController.fetchDirectory(s => onStatusChange(s));
         this.hub.update();
+    }
+
+    public async saveImage(image: string, onStatusChange: (status: string) => void)
+    {
+        let id = "";
+        while (!id || !!this.hub.jormun.me(`image_${id}`))
+        {
+            id = Math.random().toString().substring(2);
+        }
+        const remote = this.hub.jormun.getRemote();
+        const status = remote.cachedStatus();
+        if (!status) return null;
+        onStatusChange("Saving image locally...");
+        const data = await this.hub.jormun.add(`image_${id}`, image);
+        await data.set(image);
+        onStatusChange("Synchronizing...");
+        await this.hub.jormun.sync();
+        onStatusChange("Making unlisted...");
+        await remote.publish([{ key: data.getKey(), publicity: "unlisted" }]);
+        onStatusChange("Getting local room directory...");
+        const directory = await this.getDirectory();
+        if (!directory.submittedImageFragments) directory.submittedImageFragments = [];
+        directory.submittedImageFragments.push(`image_${id}`);
+        onStatusChange("Setting local room directory...");
+        await this.setDirectory(directory, true);
+        onStatusChange("Fetching host...");
+        const host = (await this.hub.jormun.hashedRemote()).host;
+        return { host: host, key: data.getKey().stringifyRemote(status.userId) };
     }
 
 }

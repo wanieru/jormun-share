@@ -4,4 +4,5 @@ import { RoomInfo } from "./RoomInfo";
 export interface RoomDirectory
 {
     rooms: RoomInfo[];
+    submittedImageFragments?: string[]
 }

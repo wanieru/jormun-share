@@ -4,11 +4,12 @@ import { Button, Card } from "reactstrap";
 import { RoomTransaction } from "../../../../Data/RoomTransaction";
 import { AlertController } from "../../../../Hub/AlertController";
 import { Room } from "../../../../Hub/DataController";
+import { Hub } from "../../../../Hub/Hub";
 import { Currencies } from "../../../../Utils/Currencies";
 import { Strings } from "../../../../Utils/Strings";
 import { Fas } from "../../Utility/Icon";
 
-export function TransactionView(p: { data: RoomTransaction, room: Room, onEdit: (d: RoomTransaction) => void, onPreview: (d: RoomTransaction) => void }): JSXInternal.Element
+export function TransactionView(p: { hub: Hub, data: RoomTransaction, room: Room, onEdit: (d: RoomTransaction) => void, onPreview: (d: RoomTransaction) => void }): JSXInternal.Element
 {
     let canEdit = p.data.creatorId === p.room.info.selectedUserId;
     const creatorName = p.room?.users?.find(u => u.userId === p?.data.creatorId)?.name ?? null;
@@ -22,7 +23,7 @@ export function TransactionView(p: { data: RoomTransaction, room: Room, onEdit: 
 
     if (p.data.amount === 0 && p.data.debtors.length === 0)
     {
-        content = <><Fas comment /> <span>{Strings.elips(p.data.message, 500)}</span></>;
+        content = <>{p.data.message && <><Fas comment /> </>}<span>{Strings.elips(p.data.message, 500)}</span></>;
         color = "light";
         inverse = false;
         canPreview = false;
@@ -64,6 +65,9 @@ export function TransactionView(p: { data: RoomTransaction, room: Room, onEdit: 
                 {Strings.elips(creatorName ?? "", 20)}<span className="text-muted" style={{ marginRight: "10px", float: "right", fontSize: "0.75em" }}> {AlertController.timeToAgoStr(p.data.time, 1000 * 60 * 60 * 24 * 7)}</span>
             </div>
             {content}
+            {p.data.image && <div style={{ textAlign: "left" }}>
+                <img style={{ maxWidth: "100px", maxHeight: "100px" }} src={p.hub.dataController.fetchImage(p.data.image.host, p.data.image.key) ?? ""} />
+            </div>}
         </Card>
     </>;
 };

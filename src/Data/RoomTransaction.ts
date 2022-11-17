@@ -7,7 +7,8 @@ export interface NewTransactionData
     amount: number,
     creditor: UserId,
     currency: string,
-    debtors: RoomTransactionDebtor[]
+    debtors: RoomTransactionDebtor[],
+    image?: { key: string, host: string }
 }
 export interface RoomTransactionExtra
 {

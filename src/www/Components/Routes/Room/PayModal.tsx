@@ -268,7 +268,6 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
         for (const creditor of this.bridge.creditors ?? [])
         {
             if (creditor.ignored) continue;
-            if (Currencies.appromixatelySame(creditor.amount, 0, this.bridge.fromCurrency.current)) continue;
             const transaction: NewTransactionData = {
                 message: "",
                 creditor: info.selectedUserId ?? "",

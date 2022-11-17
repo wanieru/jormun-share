@@ -1,5 +1,6 @@
 import { GetResponse } from "jormun-sdk/dist/ApiTypes/Get";
 import { Jormun } from "jormun-sdk/dist/Jormun";
+import { Key } from "jormun-sdk/dist/Key";
 import { RoomInfo } from "../Data/RoomInfo";
 import { RoomRoot } from "../Data/RoomRoot";
 import { NewTransactionData, RoomTransaction } from "../Data/RoomTransaction";
@@ -24,6 +25,7 @@ export class DataController
     private hub: Hub;
     private rooms: Room[] = [];
     private fetching = false;
+    private imageCache: { host: string, key: string, data: string }[] = [];
 
     private lastCurrency = "USD";
 
@@ -149,9 +151,9 @@ export class DataController
                 creditorBalance.balance += debtor.amount;
             }
         }
-        for(const user of room.balances)
+        for (const user of room.balances)
         {
-            for(const currency of user.balances)
+            for (const currency of user.balances)
             {
                 currency.balance = Currencies.parse(currency.balance, currency.currency);
             }
@@ -228,6 +230,15 @@ export class DataController
         for (const key in data) (existingTransaction as any)[key] = (data as any)[key];
 
         await this.saveUser(host, key, roomAndUser, s => onStatusChange(s));
+
+        const message: NewTransactionData = {
+            amount: 0,
+            debtors: [],
+            creditor: roomAndUser.userInfo.userId,
+            message: `${roomAndUser.userData.name} edited an entry from ${new Date(existingTransaction?.time ?? 0).toLocaleString()}.`,
+            currency: ""
+        }
+        await this.addTransction(host, key, message, s => onStatusChange(s));
     }
     public async removeTransaction(host: string, key: string, id: string, onStatusChange: (status: string) => void)
     {
@@ -286,5 +297,24 @@ export class DataController
             await this.hub.jormun.add("last_currency", currency);
             await this.hub.jormun.me("last_currency")?.set(currency);
         })();
+    }
+    public fetchImage(host: string, key: string)
+    {
+        const parsed = Key.parse(key, -1);
+        if (!parsed) return "";
+        const cache = this.imageCache.find(i => i.host === host && i.key === key);
+        if (cache) return cache.data;
+        (async () =>
+        {
+            const obj = { host, key, data: "" };
+            this.imageCache.push(obj);
+            const remote = await Jormun.getAnonymousRemote(Hub.app, host, a => this.hub.alert.handleAlert(a));
+            const peekResponse = await remote.peek([parsed]);
+            if (!peekResponse || !peekResponse.hasOwnProperty(key)) return "";
+            const data = peekResponse[key];
+            obj.data = data;
+            this.hub.update();
+        })();
+        return "";
     }
 }
