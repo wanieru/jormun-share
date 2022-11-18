@@ -26,13 +26,11 @@ export function TransactionView(p: { hub: Hub, data: RoomTransaction, room: Room
         content = <>{p.data.message && <><Fas comment /> </>}<span>{Strings.elips(p.data.message, 500)}</span></>;
         color = "light";
         inverse = false;
-        canPreview = false;
     }
     else if (p.data.debtors.length === 1 && p.data.debtors[0].user !== p.data.creditor && p.data.creditor === p.data.creatorId && !p.data.message)
     {
         const recepient = p.room.users?.find(u => u.userId === p.data.debtors[0].user)?.name ?? "";
         content = <b><Fas hand-holding-dollar /> {Strings.elips(creatorName ?? "", 10)} paid {Currencies.formatAmount(p.data.amount, p.data.currency)} to {Strings.elips(recepient, 10)}.</b>;
-        canPreview = false;
     }
     else
     {
