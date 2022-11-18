@@ -284,6 +284,7 @@ export class TransactionModal extends Bridge<TransactionModalProps, TransactionM
         params.bridge.amount.value = "";
         params.bridge.debtors = null;
         params.bridge.editingId = "";
+        params.bridge.editingTransaction = null;
         params.bridge.message.value = "";
         params.bridge.previewing = false;
         params.bridge.status = "";
@@ -297,6 +298,7 @@ export class TransactionModal extends Bridge<TransactionModalProps, TransactionM
         params.bridge.amount.value = transaction.amount.toString();
         params.bridge.debtors = JSON.parse(JSON.stringify(transaction.debtors));
         params.bridge.editingId = transaction.transactionId;
+        params.bridge.editingTransaction = null;
         params.bridge.currency.current = transaction.currency;
         params.bridge.message.value = transaction.message;
         params.bridge.creditor.current = transaction.creditor;
@@ -312,6 +314,7 @@ export class TransactionModal extends Bridge<TransactionModalProps, TransactionM
         params.bridge.amount.value = transaction.amount.toString();
         params.bridge.debtors = JSON.parse(JSON.stringify(transaction.debtors));
         params.bridge.editingId = transaction.transactionId;
+        params.bridge.editingTransaction = null;
         params.bridge.currency.current = transaction.currency;
         params.bridge.message.value = transaction.message;
         params.bridge.creditor.current = transaction.creditor;
