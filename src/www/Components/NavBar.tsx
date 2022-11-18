@@ -35,7 +35,7 @@ export class NavBar extends Component<NavBarProps, NavBarState>
                     </Nav>
                     <Nav navbar>
                         <li className="nav-item d-lg-inline-block d-none"><SyncButton hub={p.hub} /></li>
-                        <NavLink className="nav-link" activeClassName="active" to={`/images`}><Fas image /> Images</NavLink>
+                        {p.hub.jormun.getStatus().loggedIn && <NavLink className="nav-link" activeClassName="active" to={`/images`}><Fas image /> Images</NavLink>}
                         <NavLink className="nav-link" activeClassName="active" to={`/server`}><Fas plug /> Server</NavLink>
                     </Nav>
                 </Collapse>
