@@ -76,6 +76,7 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
     }
     private async fetch()
     {
+        this.scrollDown();
         await Wait.until(() => !this.mounted || !!this.getRoom());
         const room = this.getRoom();
         if (room?.info)
@@ -85,13 +86,17 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
                 await this.props.hub.dataController.fetchRoom(room.info.host, room.info.roomRootKey, true, true, s => this.setStateAsync({ fetchStatus: s }));
                 await this.setStateAsync({ fetchStatus: "" });
                 await Wait.secs(0);
-                $('html, body').animate({
-                    scrollTop: $(document).height()
-                }, 'slow');
+                this.scrollDown();
             })();
 
         }
     }
+    private scrollDown = () =>
+    {
+        $('html, body').animate({
+            scrollTop: $(document).height()
+        }, 'slow');
+    };
     private async checkJoined()
     {
         await Wait.until(() => !this.mounted || this.props.hub.jormun.getStatus().initialized);
