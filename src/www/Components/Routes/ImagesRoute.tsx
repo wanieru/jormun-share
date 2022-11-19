@@ -1,5 +1,5 @@
 import { Key } from "jormun-sdk/dist/Key";
-import { ComponentChild } from "preact";
+import { ComponentChild, JSX } from "preact";
 import { Component } from "preact/compat";
 import { Navigate, useParams } from "react-router-dom";
 import { Button, Card, CardBody, CardHeader } from "reactstrap";
@@ -59,12 +59,12 @@ export class ImagesRoute extends ComponentAsync<ImagesRouteProps, ImagesRouteSta
         if (s.images.length < 1) return <div style={{ textAlign: "center" }}><b>No images uploaded!</b></div>
         return <div style={{ paddingBottom: "200px" }}>
             {s.images.map((image, idx) => <div key={image.fragment}>
-                <Card style={{ marginBottom: "10px" }}>
+                <Card style={{ marginBottom: "10px", cursor: "zoom-in" }} onClick={() => this.setStateAsync({ previewImage: image.data })}>
                     <CardHeader><div style={{ float: "right" }}>
-                        <Button onClick={() => this.delete(image.fragment)}><Fas trash /></Button>
+                        <Button onClick={(e: JSX.TargetedMouseEvent<HTMLElement>) => { this.delete(image.fragment); e.stopPropagation(); e.preventDefault() }}><Fas trash /></Button>
                     </div>
                         {image.title}</CardHeader>
-                    <CardBody><img style={{ maxWidth: "100px", maxHeight: "100px", cursor: "zoom-in" }} src={image.data} onClick={() => this.setStateAsync({ previewImage: image.data })} /></CardBody>
+                    <CardBody><img style={{ maxWidth: "100px", maxHeight: "100px" }} src={image.data} /></CardBody>
                 </Card>
 
             </div>)}
