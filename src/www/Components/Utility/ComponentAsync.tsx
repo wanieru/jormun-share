@@ -42,7 +42,7 @@ export abstract class ComponentAsync<P, S> extends Component<P, S>
 
     public render = (p?: RenderableProps<P, any> | undefined, s?: Readonly<S> | undefined, c?: any) => 
     {
-        if (this.isRendering) return;
+        if (this.isRendering) this.previouslyRendered;
         this.isRendering = true;
         if (!!this.queuedRender)
         {
