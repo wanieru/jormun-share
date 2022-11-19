@@ -12,6 +12,7 @@ import { Room } from "../../../Hub/DataController";
 import { Hub } from "../../../Hub/Hub";
 import { Currencies } from "../../../Utils/Currencies";
 import { Strings } from "../../../Utils/Strings";
+import { Wait } from "../../../Utils/Wait";
 import { B64URL } from "../Utility/B64URL";
 import { BridgeParams } from "../Utility/BridgeAsync";
 import { ComponentAsync } from "../Utility/ComponentAsync";

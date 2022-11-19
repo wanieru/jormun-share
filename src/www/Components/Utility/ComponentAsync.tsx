@@ -46,7 +46,6 @@ export abstract class ComponentAsync<P, S> extends Component<P, S>
         if (!!this.queuedRender)
         {
             this.previouslyRendered = this.queuedRender;
-            this.queuedRender = null;
             this.isRendering = false;
         }
         else
@@ -59,7 +58,10 @@ export abstract class ComponentAsync<P, S> extends Component<P, S>
                 {
                     this.queuedRender = p;
                     this.isRendering = false;
-                    this.forceUpdate();
+                    this.forceUpdate(() =>
+                    {
+                        this.queuedRender = null;
+                    });
                 });
             }
             else
