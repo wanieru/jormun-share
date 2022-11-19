@@ -7,6 +7,7 @@ import { RoomDirectory } from "../../../Data/RoomDirectory";
 import { Hub } from "../../../Hub/Hub";
 import { Numbers } from "../../../Utils/Numbers";
 import { B64URL } from "../Utility/B64URL";
+import { ComponentAsync } from "../Utility/ComponentAsync";
 import { Fas } from "../Utility/Icon";
 import { StatusModal } from "./Home/StatusModal";
 
@@ -22,7 +23,7 @@ export class ImagesRouteState
     images: { fragment: string, data: string, title: string }[] = []
 }
 
-export class ImagesRoute extends Component<ImagesRouteProps, ImagesRouteState>
+export class ImagesRoute extends ComponentAsync<ImagesRouteProps, ImagesRouteState>
 {
     public state = new ImagesRouteState();
 
@@ -51,7 +52,7 @@ export class ImagesRoute extends Component<ImagesRouteProps, ImagesRouteState>
             this.setState({ images: this.state.images });
         }
     }
-    public render(p: ImagesRouteProps, s: ImagesRouteState): ComponentChild
+    public renderer(p: ImagesRouteProps, s: ImagesRouteState): ComponentChild
     {
         if (!p.hub.jormun.getStatus().loggedIn) return <Navigate to="/" />;
         if (!s.directory) return <>Loading...</>;

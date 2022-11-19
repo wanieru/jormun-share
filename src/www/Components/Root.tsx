@@ -9,13 +9,14 @@ import { ImagesRoute } from "./Routes/ImagesRoute";
 import { JoinRoute } from "./Routes/JoinRoute";
 import { RoomRoute, RoomRouteRoot } from "./Routes/RoomRoute";
 import { ServerRoute } from "./Routes/ServerRoute";
+import { ComponentAsync } from "./Utility/ComponentAsync";
 import { Fas } from "./Utility/Icon";
 
-export class Root extends Component<{}, View>
+export class Root extends ComponentAsync<{}, View>
 {
     public state = new View();
     public hub = new Hub([s => this.setState(s)]);
-    render(p: {}, s: View): ComponentChild
+    renderer(p: {}, s: View): ComponentChild
     {
         const navigateTarget = this.hub.navigation.popTarget();
         if (!this.hub.jormun.getStatus().initialized) return <h1 className="text-center mt-5"><LoadAnimation animation={s.root.loadAnimation} /> Loading...</h1>

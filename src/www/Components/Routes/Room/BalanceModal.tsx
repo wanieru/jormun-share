@@ -7,7 +7,7 @@ import { Hub } from "../../../../Hub/Hub";
 import { Currencies } from "../../../../Utils/Currencies";
 import { Strings } from "../../../../Utils/Strings";
 import { Textbox, TextboxBridge } from "../../Input/Textbox";
-import { Bridge, BridgeParams } from "../../Utility/Bridge";
+import { BridgeAsync, BridgeParams } from "../../Utility/BridgeAsync";
 import { Fas } from "../../Utility/Icon";
 
 export interface BalanceModalProps
@@ -23,7 +23,7 @@ export class BalanceModalBridge
     opened = false;
 }
 
-export class BalanceModal extends Bridge<BalanceModalProps, BalanceModalState, BalanceModalBridge>
+export class BalanceModal extends BridgeAsync<BalanceModalProps, BalanceModalState, BalanceModalBridge>
 {
     public state = new BalanceModalState();
     public componentDidMount()
@@ -38,7 +38,7 @@ export class BalanceModal extends Bridge<BalanceModalProps, BalanceModalState, B
         this.setBridge({ opened: !this.bridge.opened });
     }
 
-    protected renderer(p: BalanceModalProps, s: BalanceModalState, b: BalanceModalBridge): ComponentChild
+    protected rendering(p: BalanceModalProps, s: BalanceModalState, b: BalanceModalBridge): ComponentChild
     {
         const currencies = this.getCurrencies();
         return <>

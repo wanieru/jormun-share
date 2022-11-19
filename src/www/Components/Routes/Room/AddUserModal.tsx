@@ -5,7 +5,7 @@ import { Button, Modal, ModalBody, ModalHeader } from "reactstrap";
 import { Room } from "../../../../Hub/DataController";
 import { Hub } from "../../../../Hub/Hub";
 import { Textbox, TextboxBridge } from "../../Input/Textbox";
-import { Bridge, BridgeParams } from "../../Utility/Bridge";
+import { BridgeAsync, BridgeParams } from "../../Utility/BridgeAsync";
 import { Fas } from "../../Utility/Icon";
 
 export interface AddUserModalProps
@@ -24,7 +24,7 @@ export class AddUserModalBridge
     status = "";
 }
 
-export class AddUserModal extends Bridge<AddUserModalProps, AddUserModalState, AddUserModalBridge>
+export class AddUserModal extends BridgeAsync<AddUserModalProps, AddUserModalState, AddUserModalBridge>
 {
     public state = new AddUserModalState();
     public componentDidMount()
@@ -40,7 +40,7 @@ export class AddUserModal extends Bridge<AddUserModalProps, AddUserModalState, A
         this.setBridge({ opened: !this.bridge.opened });
     }
 
-    protected renderer(p: AddUserModalProps, s: AddUserModalState, b: AddUserModalBridge): ComponentChild
+    protected rendering(p: AddUserModalProps, s: AddUserModalState, b: AddUserModalBridge): ComponentChild
     {
         return <>
             <Modal isOpen={b.opened} toggle={this.toggle}>

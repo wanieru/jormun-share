@@ -5,7 +5,7 @@ import { Button, Modal, ModalBody, ModalHeader } from "reactstrap";
 import { Room } from "../../../../Hub/DataController";
 import { Hub } from "../../../../Hub/Hub";
 import { Textbox, TextboxBridge } from "../../Input/Textbox";
-import { Bridge, BridgeParams } from "../../Utility/Bridge";
+import { BridgeAsync, BridgeParams } from "../../Utility/BridgeAsync";
 import { Fas } from "../../Utility/Icon";
 
 export interface ChangeRoomNameModalProps
@@ -24,7 +24,7 @@ export class ChangeRoomNameModalBridge
     status = "";
 }
 
-export class ChangeRoomNameModal extends Bridge<ChangeRoomNameModalProps, ChangeRoomNameModalState, ChangeRoomNameModalBridge>
+export class ChangeRoomNameModal extends BridgeAsync<ChangeRoomNameModalProps, ChangeRoomNameModalState, ChangeRoomNameModalBridge>
 {
     public state = new ChangeRoomNameModalState();
     public componentDidMount()
@@ -40,7 +40,7 @@ export class ChangeRoomNameModal extends Bridge<ChangeRoomNameModalProps, Change
         this.setBridge({ opened: !this.bridge.opened });
     }
 
-    protected renderer(p: ChangeRoomNameModalProps, s: ChangeRoomNameModalState, b: ChangeRoomNameModalBridge): ComponentChild
+    protected rendering(p: ChangeRoomNameModalProps, s: ChangeRoomNameModalState, b: ChangeRoomNameModalBridge): ComponentChild
     {
         if (!b.newRoomName)
         {

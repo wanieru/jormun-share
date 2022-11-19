@@ -1,5 +1,5 @@
 import { Button, Modal, ModalBody, ModalHeader } from "reactstrap";
-import { Bridge } from '../Utility/Bridge';
+import { BridgeAsync } from '../Utility/BridgeAsync';
 import { JSXInternal } from "preact/src/jsx";
 
 export interface ContextOption { title: string | JSXInternal.Element, onClick: () => void }
@@ -17,10 +17,10 @@ export class ContextState
 
 }
 
-export class Context extends Bridge<ContextProps, ContextState, ContextBridge>
+export class Context extends BridgeAsync<ContextProps, ContextState, ContextBridge>
 {
     public state = new ContextState();
-    public renderer = () => 
+    public rendering = () => 
     {
         return <>
             <Modal isOpen={this.bridge.open} toggle={() => this.setBridge({ open: false })}>

@@ -5,7 +5,7 @@ import { Button, Modal, ModalBody, ModalHeader } from "reactstrap";
 import { Room } from "../../../../Hub/DataController";
 import { Hub } from "../../../../Hub/Hub";
 import { Textbox, TextboxBridge } from "../../Input/Textbox";
-import { Bridge, BridgeParams } from "../../Utility/Bridge";
+import { BridgeAsync, BridgeParams } from "../../Utility/BridgeAsync";
 import { Fas } from "../../Utility/Icon";
 
 export interface ChangeNameModalProps
@@ -25,7 +25,7 @@ export class ChangeNameModalBridge
     status = "";
 }
 
-export class ChangeNameModal extends Bridge<ChangeNameModalProps, ChangeNameModalState, ChangeNameModalBridge>
+export class ChangeNameModal extends BridgeAsync<ChangeNameModalProps, ChangeNameModalState, ChangeNameModalBridge>
 {
     public state = new ChangeNameModalState();
     public componentDidMount()
@@ -41,7 +41,7 @@ export class ChangeNameModal extends Bridge<ChangeNameModalProps, ChangeNameModa
         this.setBridge({ opened: !this.bridge.opened });
     }
 
-    protected renderer(p: ChangeNameModalProps, s: ChangeNameModalState, b: ChangeNameModalBridge): ComponentChild
+    protected rendering(p: ChangeNameModalProps, s: ChangeNameModalState, b: ChangeNameModalBridge): ComponentChild
     {
         if (!b.newName || !b.phoneNumber)
         {

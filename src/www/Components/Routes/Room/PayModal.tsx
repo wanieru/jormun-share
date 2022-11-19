@@ -13,7 +13,7 @@ import { Wait } from "../../../../Utils/Wait";
 import { Dropdown, DropdownBridge, DropdownOption } from "../../Input/Dropdown";
 import { Textbox, TextboxBridge } from "../../Input/Textbox";
 import { Toggle } from "../../Input/Toggle";
-import { Bridge, BridgeParams } from "../../Utility/Bridge";
+import { BridgeAsync, BridgeParams } from "../../Utility/BridgeAsync";
 import { Far, Fas } from "../../Utility/Icon";
 
 export interface PayCreditor
@@ -46,7 +46,7 @@ export class PayModalBridge
     status = "";
 }
 
-export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridge>
+export class PayModal extends BridgeAsync<PayModalProps, PayModalState, PayModalBridge>
 {
     private static convertFromAmount = 100;
     private calculating = false;
@@ -64,7 +64,7 @@ export class PayModal extends Bridge<PayModalProps, PayModalState, PayModalBridg
         this.setBridge({ opened: !this.bridge.opened });
     }
 
-    protected renderer(p: PayModalProps, s: PayModalState, b: PayModalBridge): ComponentChild
+    protected rendering(p: PayModalProps, s: PayModalState, b: PayModalBridge): ComponentChild
     {
         const negativeCurrencies = this.negativeCurrencies();
         if (negativeCurrencies.length > 0 && !negativeCurrencies.map(c => c.currency).includes(b.fromCurrency.current))

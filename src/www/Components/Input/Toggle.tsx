@@ -1,6 +1,6 @@
 import React from "react";
 import { FormGroup, Input, Label } from "reactstrap";
-import { Bridge } from '../Utility/Bridge';
+import { BridgeAsync } from '../Utility/BridgeAsync';
 import { JSXInternal } from 'preact/src/jsx';
 
 export interface ToggleProps 
@@ -16,9 +16,9 @@ export class ToggleState
 
 }
 
-export class Toggle extends Bridge<ToggleProps, ToggleState, ToggleBridge>
+export class Toggle extends BridgeAsync<ToggleProps, ToggleState, ToggleBridge>
 {
-    public renderer = () => 
+    public rendering = () => 
     {
         return (
             <FormGroup check className="mb-3">

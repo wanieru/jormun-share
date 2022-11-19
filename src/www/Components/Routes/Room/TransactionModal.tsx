@@ -12,7 +12,7 @@ import { Numbers } from "../../../../Utils/Numbers";
 import { Wait } from "../../../../Utils/Wait";
 import { Dropdown, DropdownBridge, DropdownOption } from "../../Input/Dropdown";
 import { Textbox, TextboxBridge } from "../../Input/Textbox";
-import { Bridge, BridgeParams } from "../../Utility/Bridge";
+import { BridgeAsync, BridgeParams } from "../../Utility/BridgeAsync";
 import { Currencies } from "../../../../Utils/Currencies";
 import { Far, Fas } from "../../Utility/Icon";
 import { Strings } from "../../../../Utils/Strings";
@@ -40,7 +40,7 @@ export class TransactionModalBridge
     status = "";
 }
 
-export class TransactionModal extends Bridge<TransactionModalProps, TransactionModalState, TransactionModalBridge>
+export class TransactionModal extends BridgeAsync<TransactionModalProps, TransactionModalState, TransactionModalBridge>
 {
     private recalculating = false;
     public state = new TransactionModalState();
@@ -57,7 +57,7 @@ export class TransactionModal extends Bridge<TransactionModalProps, TransactionM
         this.setBridge({ opened: !this.bridge.opened });
     }
 
-    protected renderer(p: TransactionModalProps, s: TransactionModalState, b: TransactionModalBridge): ComponentChild
+    protected rendering(p: TransactionModalProps, s: TransactionModalState, b: TransactionModalBridge): ComponentChild
     {
         if (!b.debtors)
         {

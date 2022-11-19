@@ -1,23 +1,12 @@
-import { Jormun, JormunRemote } from "jormun-sdk/dist/Jormun";
-import { Component, ComponentChild, h, JSX } from "preact";
-import { JSXInternal } from "preact/src/jsx";
+import { Component, ComponentChild, JSX } from "preact";
 import { Navigate, useParams } from "react-router";
-import { Button, Card, CardBody, CardHeader, CardText, Container, Modal, ModalBody, ModalHeader } from "reactstrap";
-import { RoomInfo } from "../../../Data/RoomInfo";
-import { RoomRoot } from "../../../Data/RoomRoot";
-import { NewTransactionData, RoomTransaction } from "../../../Data/RoomTransaction";
-import { RoomUser } from "../../../Data/RoomUser";
-import { RoomUserData } from "../../../Data/RoomUserData";
-import { AlertController } from "../../../Hub/AlertController";
+import { Button, Card, CardBody, CardHeader, Container, Modal, ModalBody, ModalHeader } from "reactstrap";
+import { NewTransactionData } from "../../../Data/RoomTransaction";
 import { Room } from "../../../Hub/DataController";
 import { Hub } from "../../../Hub/Hub";
 import { Wait } from "../../../Utils/Wait";
 import { Textbox, TextboxBridge } from "../Input/Textbox";
-import { BridgeParams } from "../Utility/Bridge";
-import { Currencies } from "../../../Utils/Currencies";
 import { Fas } from "../Utility/Icon";
-import { JoinRoomModal, JoinRoomModalBridge } from "./Home/JoinRoomModal";
-import { NewRoomModal, NewRoomModalBridge } from "./Home/NewRoomModal";
 import { StatusModal } from "./Home/StatusModal";
 import { BalanceModal, BalanceModalBridge } from "./Room/BalanceModal";
 import { ChangeNameModal, ChangeNameModalBridge } from "./Room/ChangeNameModal";
@@ -25,12 +14,13 @@ import { ChooseUserModal } from "./Room/ChooseUserModal";
 import { PayModal, PayModalBridge } from "./Room/PayModal";
 import { TransactionList } from "./Room/TransactionList";
 import { TransactionModal, TransactionModalBridge } from "./Room/TransactionModal";
-import { TransactionView } from "./Room/TransactionView";
 import { ChangeRoomNameModal, ChangeRoomNameModalBridge } from "./Room/ChangeRoomNameModal";
 import { AddUserModal, AddUserModalBridge } from "./Room/AddUserModal";
 import { Strings } from "../../../Utils/Strings";
 import { Key } from "jormun-sdk/dist/Key";
 import { B64URL } from "../Utility/B64URL";
+import { Images } from "../../../Utils/Images";
+import { ComponentAsync } from "../Utility/ComponentAsync";
 
 export function RoomRouteRoot(p: { hub: Hub })
 {
@@ -66,13 +56,14 @@ export class RoomRouteState
     changeRoomNameModal = new ChangeRoomNameModalBridge();
 
     submitImagePreview = "";
+    submitImageAction: ((image: { host: string, key: string }, room: Room, onStatusChange: (s: string) => void) => Promise<void>) | null = null;
 
     transactionShowLimit = 10;
 
     redirectToJoin = false;
 }
 
-export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
+export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
 {
     public state = new RoomRouteState();
     private mounted = false;
@@ -128,7 +119,7 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
         };
     }
 
-    public render(p: RoomRouteProps, s: RoomRouteState): ComponentChild
+    public renderer(p: RoomRouteProps, s: RoomRouteState): ComponentChild
     {
         const room = this.getRoom();
 
@@ -165,7 +156,7 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
                                 <Textbox placeholder="Write a message..." type="text" bridge={s.chatMessage} setBridge={b => this.setState({ chatMessage: b })} suffix={
                                     <>
                                         <Button size="xl" color="primary" title="Send message" onClick={() => this.sendMessage()}><Fas paper-plane /></Button>
-                                        {<Button size="xl" color="primary" disabled={!p.hub.jormun.getStatus().loggedIn} title="Send image" onClick={() => this.chooseImage()}><Fas image /></Button>}
+                                        {<Button size="xl" color="primary" disabled={!p.hub.jormun.getStatus().loggedIn} title="Send image" onClick={() => this.chooseImageToUpload()}><Fas image /></Button>}
                                     </>
                                 } />
                             </div>
@@ -199,7 +190,7 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
                 <img src={s.submitImagePreview} style={{ width: "100%" }} />
                 <div style={{ float: "right", marginTop: "10px" }}>
                     <Button color="primary" onClick={() => this.setState({ submitImagePreview: "" })}><Fas cancel /> Cancel</Button><span> </span>
-                    <Button color="primary" onClick={() => this.submitImage(room)}><Fas paper-plane /> Submit</Button>
+                    <Button color="primary" onClick={() => this.submitImagePreviewWrapper(room)}><Fas paper-plane /> Submit</Button>
                 </div>
             </> : ""} close={() => this.setState({ submitImagePreview: "" })} />
         </>;
@@ -281,109 +272,39 @@ export class RoomRoute extends Component<RoomRouteProps, RoomRouteState>
         await Wait.secs(0.1);
         this.setState({ sendMessageStatus: "", chatMessage: { value: "" } });
     };
-    private chooseImage = async () =>
+    private submitImagePreviewWrapper = async (room: Room) =>
     {
-        const element = document.createElement("input");
-        element.type = "file";
-        element.style.display = "none";
-        element.accept = "image/*";
-        document.body.appendChild(element);
-        element.click();
-        await new Promise<void>(resolve => 
-        {
-            element.onchange = () => resolve();
-        });
-        if (element.files && element.files.length > 0)
-        {
-            const fileReader = new FileReader();
-            const file = element.files[0];
-            fileReader.readAsDataURL(file);
-            this.setState({ imageProcessingStatus: "Loading file..." });
-            await new Promise<void>(resolve => fileReader.onload = () => resolve());
-            let dataUrl = fileReader.result;
-
-
-            if (typeof dataUrl === "string" && !!dataUrl)
-            {
-                const originalImg = document.createElement("img");
-                originalImg.src = dataUrl ?? "";
-                this.setState({ imageProcessingStatus: "Parsing image 1/2..." });
-                await new Promise<void>(resolve => originalImg.onload = () => resolve());
-                const originalImage = new Image();
-                originalImage.src = dataUrl;
-                this.setState({ imageProcessingStatus: "Parsing image 2/2..." });
-                await new Promise<void>(resolve => originalImage.onload = () => resolve());
-
-                const maxDimension = 512;
-                let width = originalImage.width;
-                let height = originalImage.height;
-
-                if (width > maxDimension)
-                {
-                    const scale = maxDimension / width;
-                    width *= scale;
-                    height *= scale;
-                }
-                if (height > maxDimension)
-                {
-                    const scale = maxDimension / height;
-                    width *= scale;
-                    height *= scale;
-                }
-
-                const maxSize = 50000;
-                while (dataUrl.length > maxSize)
-                {
-                    this.setState({ imageProcessingStatus: `Downsizing image to ${width}x${height}...` });
-                    await Wait.secs(0);
-                    const canvas = document.createElement("canvas");
-                    canvas.width = width;
-                    canvas.height = height;
-                    var ctx = canvas.getContext("2d");
-                    if (!ctx) break;
-                    ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = "high"
-                    ctx.drawImage(originalImg, 0, 0, width, height);
-                    dataUrl = canvas.toDataURL(file.type);
-                    width *= 0.9;
-                    height *= 0.9;
-                }
-                if (dataUrl.length < maxSize)
-                {
-                    await Wait.secs(0.5);
-                    this.setState({ imageProcessingStatus: "" });
-                    await Wait.secs(0.5);
-                    this.setState({ submitImagePreview: dataUrl });
-                }
-            }
-        }
-        await Wait.secs(0);
-        this.setState({ imageProcessingStatus: "" });
-        element.remove();
-    };
-    private submitImage = async (room: Room) =>
-    {
-        if (!room.info.selectedUserId) return;
+        if (!this.state.submitImageAction || !this.state.submitImagePreview) return;
         const image = this.state.submitImagePreview;
         this.setState({ submitImagePreview: "" });
-        await Wait.secs(0.5);
-        this.setState({ uploadImageStatus: "Preparing..." })
-        await Wait.secs(0.5);
+        this.setState({ uploadImageStatus: "Preparing..." });
         const data = await this.props.hub.localRoomController.saveImage(image, s => this.setState({ uploadImageStatus: s }));
         if (data)
         {
-            const message: NewTransactionData = {
-                amount: 0,
-                debtors: [],
-                creditor: room.info.selectedUserId,
-                message: "",
-                currency: "",
-                image: { key: data.key, host: data.host }
-            }
-            await this.props.hub.dataController.addTransction(room.info.host, room.info.roomRootKey, message, s => this.setState({ uploadImageStatus: s }));
+            this.state.submitImageAction(data, room, s => this.setState({ uploadImageStatus: s }));
         }
-        await Wait.secs(0.5);
+    }
+    private chooseImageToUpload = async () =>
+    {
+        const image = (await Images.tryUploadPictureToDownsizedB64(512, 50000, s => this.setState({ imageProcessingStatus: s }))) ?? "";
+        if (image)
+        {
+            this.setState({ submitImagePreview: image, submitImageAction: (i, r, o) => this.postImageToChat(i, r, o) });
+        }
         this.setState({ uploadImageStatus: "" });
+    };
+    private postImageToChat = async (image: { host: string, key: string }, room: Room, onStatusChange: (status: string) => void) =>
+    {
+        if (!room.info.selectedUserId) return;
+        const message: NewTransactionData = {
+            amount: 0,
+            debtors: [],
+            creditor: room.info.selectedUserId,
+            message: "",
+            currency: "",
+            image: image
+        }
+        await this.props.hub.dataController.addTransction(room.info.host, room.info.roomRootKey, message, s => onStatusChange(s));
     }
     private refresh = async () =>
     {

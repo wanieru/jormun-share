@@ -5,7 +5,8 @@ import { useParams } from "react-router-dom";
 import { Alert, Button } from "reactstrap";
 import { Hub } from "../../../Hub/Hub";
 import { Textbox } from "../Input/Textbox";
-import { Bridge } from "../Utility/Bridge";
+import { BridgeAsync } from "../Utility/BridgeAsync";
+import { ComponentAsync } from "../Utility/ComponentAsync";
 import { Fab, Fas } from "../Utility/Icon";
 
 
@@ -28,7 +29,7 @@ export class ServerRouteState
     public config?: Config;
 }
 
-export class ServerRoute extends Component<ServerRouteProps, ServerRouteState>
+export class ServerRoute extends ComponentAsync<ServerRouteProps, ServerRouteState>
 {
     public state = new ServerRouteState();
 
@@ -71,7 +72,7 @@ export class ServerRoute extends Component<ServerRouteProps, ServerRouteState>
         await this.props.hub.server.login(this.state);
         await this.reset();
     }
-    public render(p: ServerRouteProps, s: ServerRouteState): ComponentChild
+    public renderer(p: ServerRouteProps, s: ServerRouteState): ComponentChild
     {
         return <>
             {!p.hub.jormun.getStatus().initialized ? <span class="badge rounded-pill bg-warning mt-3"><Fas spinner /> Loading...</span> : ""}

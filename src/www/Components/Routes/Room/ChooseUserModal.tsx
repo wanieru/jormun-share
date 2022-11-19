@@ -6,7 +6,8 @@ import { RoomUserData } from "../../../../Data/RoomUserData";
 import { Hub } from "../../../../Hub/Hub";
 import { Strings } from "../../../../Utils/Strings";
 import { Textbox, TextboxBridge } from "../../Input/Textbox";
-import { Bridge, BridgeParams } from "../../Utility/Bridge";
+import { BridgeAsync, BridgeParams } from "../../Utility/BridgeAsync";
+import { ComponentAsync } from "../../Utility/ComponentAsync";
 import { Fas } from "../../Utility/Icon";
 
 export interface ChooseUserModalProps
@@ -23,7 +24,7 @@ export class ChooseUserModalState
     status = "";
 }
 
-export class ChooseUserModal extends Component<ChooseUserModalProps, ChooseUserModalState>
+export class ChooseUserModal extends ComponentAsync<ChooseUserModalProps, ChooseUserModalState>
 {
     public state = new ChooseUserModalState();
     public componentDidMount()
@@ -33,7 +34,7 @@ export class ChooseUserModal extends Component<ChooseUserModalProps, ChooseUserM
     {
     }
 
-    public render(p: ChooseUserModalProps, s: ChooseUserModalState): ComponentChild
+    public renderer(p: ChooseUserModalProps, s: ChooseUserModalState): ComponentChild
     {
         return <>
             <Modal isOpen={p.opened}>

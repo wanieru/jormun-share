@@ -3,7 +3,7 @@ import { Component, ComponentChild } from "preact";
 import { Button, Modal, ModalBody, ModalHeader } from "reactstrap";
 import { Hub } from "../../../../Hub/Hub";
 import { Textbox, TextboxBridge } from "../../Input/Textbox";
-import { Bridge, BridgeParams } from "../../Utility/Bridge";
+import { BridgeAsync, BridgeParams } from "../../Utility/BridgeAsync";
 import { Fas } from "../../Utility/Icon";
 
 export interface NewRoomModalProps
@@ -22,7 +22,7 @@ export class NewRoomModalBridge
     users = [new TextboxBridge()] as TextboxBridge[]
 }
 
-export class NewRoomModal extends Bridge<NewRoomModalProps, NewRoomModalState, NewRoomModalBridge>
+export class NewRoomModal extends BridgeAsync<NewRoomModalProps, NewRoomModalState, NewRoomModalBridge>
 {
     public state = new NewRoomModalState();
     public componentDidMount()
@@ -38,7 +38,7 @@ export class NewRoomModal extends Bridge<NewRoomModalProps, NewRoomModalState, N
         this.setBridge({ opened: !this.bridge.opened });
     }
 
-    protected renderer(p: NewRoomModalProps, s: NewRoomModalState, b: NewRoomModalBridge): ComponentChild
+    protected rendering(p: NewRoomModalProps, s: NewRoomModalState, b: NewRoomModalBridge): ComponentChild
     {
         if (b.users.every(t => !!t.value))
         {

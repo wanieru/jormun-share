@@ -4,7 +4,7 @@ import { Component, ComponentChild } from "preact";
 import { Button, Modal, ModalBody, ModalHeader } from "reactstrap";
 import { Hub } from "../../../../Hub/Hub";
 import { Textbox, TextboxBridge } from "../../Input/Textbox";
-import { Bridge, BridgeParams } from "../../Utility/Bridge";
+import { BridgeAsync, BridgeParams } from "../../Utility/BridgeAsync";
 import { Fas } from "../../Utility/Icon";
 
 export interface JoinRoomModalProps
@@ -24,7 +24,7 @@ export class JoinRoomModalBridge
     roomId = new TextboxBridge();
 }
 
-export class JoinRoomModal extends Bridge<JoinRoomModalProps, JoinRoomModalState, JoinRoomModalBridge>
+export class JoinRoomModal extends BridgeAsync<JoinRoomModalProps, JoinRoomModalState, JoinRoomModalBridge>
 {
     public state = new JoinRoomModalState();
     public componentDidMount()
@@ -40,7 +40,7 @@ export class JoinRoomModal extends Bridge<JoinRoomModalProps, JoinRoomModalState
         this.setBridge({ opened: !this.bridge.opened });
     }
 
-    protected renderer(p: JoinRoomModalProps, s: JoinRoomModalState, b: JoinRoomModalBridge): ComponentChild
+    protected rendering(p: JoinRoomModalProps, s: JoinRoomModalState, b: JoinRoomModalBridge): ComponentChild
     {
         return <>
             <Modal isOpen={b.opened} toggle={this.toggle}>

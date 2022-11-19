@@ -13,7 +13,8 @@ import { Hub } from "../../../Hub/Hub";
 import { Currencies } from "../../../Utils/Currencies";
 import { Strings } from "../../../Utils/Strings";
 import { B64URL } from "../Utility/B64URL";
-import { BridgeParams } from "../Utility/Bridge";
+import { BridgeParams } from "../Utility/BridgeAsync";
+import { ComponentAsync } from "../Utility/ComponentAsync";
 import { Fas } from "../Utility/Icon";
 import { JoinRoomModal, JoinRoomModalBridge } from "./Home/JoinRoomModal";
 import { NewRoomModal, NewRoomModalBridge } from "./Home/NewRoomModal";
@@ -32,7 +33,7 @@ export class HomeRouteState
     leaveStatus = "";
 }
 
-export class HomeRoute extends Component<HomeRouteProps, HomeRouteState>
+export class HomeRoute extends ComponentAsync<HomeRouteProps, HomeRouteState>
 {
     public state = new HomeRouteState();
     public componentDidMount()
@@ -48,7 +49,7 @@ export class HomeRoute extends Component<HomeRouteProps, HomeRouteState>
         this.props.hub.update();
     }
 
-    public render(p: HomeRouteProps, s: HomeRouteState): ComponentChild
+    public renderer(p: HomeRouteProps, s: HomeRouteState): ComponentChild
     {
         const canCreateRoom = this.props.hub.localRoomController.canCreateRoom();
         const rooms = p.hub.dataController.getRooms();

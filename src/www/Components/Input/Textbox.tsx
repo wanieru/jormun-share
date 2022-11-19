@@ -1,6 +1,6 @@
 import { JSXInternal } from 'preact/src/jsx';
 import { FormGroup, Label, Input as FormInput, FormText, InputGroup, InputGroupText } from 'reactstrap';
-import { Bridge } from '../Utility/Bridge';
+import { BridgeAsync } from '../Utility/BridgeAsync';
 import { Dropdown } from './Dropdown';
 
 export interface TextboxProps 
@@ -25,9 +25,9 @@ export class TextboxState
 {
 }
 
-export class Textbox extends Bridge<TextboxProps, TextboxState, TextboxBridge>
+export class Textbox extends BridgeAsync<TextboxProps, TextboxState, TextboxBridge>
 {
-    public renderer = () => 
+    public rendering = () => 
     {
         return (
             <FormGroup className="mb-3">

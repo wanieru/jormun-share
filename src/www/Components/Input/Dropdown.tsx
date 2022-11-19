@@ -1,5 +1,5 @@
 import { ChangeEvent, JSX } from "react";
-import { Bridge } from '../Utility/Bridge';
+import { BridgeAsync } from '../Utility/BridgeAsync';
 import { JSXInternal } from "preact/src/jsx";
 
 export interface DropdownOption { key: string, value: string, disabled?: boolean }
@@ -22,7 +22,7 @@ export class DropdownState
 
 }
 
-export class Dropdown extends Bridge<DropdownProps, DropdownState, DropdownBridge>
+export class Dropdown extends BridgeAsync<DropdownProps, DropdownState, DropdownBridge>
 {
     componentDidMount = () => 
     {
@@ -34,7 +34,7 @@ export class Dropdown extends Bridge<DropdownProps, DropdownState, DropdownBridg
     {
         this.setBridge({ current: e });
     }
-    public renderer = () => 
+    public rendering = () => 
     {
         const options = [];
         for (const option of this.props.options)

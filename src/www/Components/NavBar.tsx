@@ -4,6 +4,7 @@ import { Collapse, Container, Nav, Navbar, NavbarBrand, NavbarToggler } from "re
 import { Hub } from "../../Hub/Hub";
 import { SyncButton } from "./SyncButton";
 import { BootstrapSizes, BootstrapUtils } from "./Utility/BootstrapUtils";
+import { ComponentAsync } from "./Utility/ComponentAsync";
 import { Fas } from "./Utility/Icon";
 
 export interface NavBarProps
@@ -15,14 +16,14 @@ export class NavBarState
     open = false;
 }
 
-export class NavBar extends Component<NavBarProps, NavBarState>
+export class NavBar extends ComponentAsync<NavBarProps, NavBarState>
 {
     state = new NavBarState();
     private toggleOpen()
     {
         this.setState({ open: !this.state.open });
     }
-    render(p: NavBarProps, s: NavBarState): ComponentChild
+    renderer(p: NavBarProps, s: NavBarState): ComponentChild
     {
         return <>
             <Navbar fixed="bottom" container="sm" color="primary" dark expand="lg">
