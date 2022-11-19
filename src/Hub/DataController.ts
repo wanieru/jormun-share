@@ -8,6 +8,7 @@ import { RoomUserData } from "../Data/RoomUserData";
 import { UserId } from "../Data/UserId";
 import { Currencies } from "../Utils/Currencies";
 import { Numbers } from "../Utils/Numbers";
+import { OnStatusChange } from "../Utils/StatusChanging";
 import { Wait } from "../Utils/Wait";
 import { Hub } from "./Hub";
 
@@ -39,13 +40,13 @@ export class DataController
     {
         return this.rooms;
     }
-    public async fetchDirectory(onStatusChange: (status: string) => void)
+    public async fetchDirectory(onStatusChange: OnStatusChange)
     {
         if (this.fetching) return;
         this.fetching = true;
-        onStatusChange("Waiting for jormun to initialize...");
+        await onStatusChange("Waiting for jormun to initialize...");
         await Wait.until(() => this.hub.jormun.getStatus().initialized);
-        onStatusChange("Fetching directory...");
+        await onStatusChange("Fetching directory...");
         const directory = await this.hub.localRoomController.getDirectory();
         if (!directory) return;
         let newRooms = false;
@@ -76,44 +77,44 @@ export class DataController
         }
         this.fetching = false;
     }
-    public async fetchRoom(host: string, key: string, full: boolean, force: boolean, onStatusChange: (status: string) => void)
+    public async fetchRoom(host: string, key: string, full: boolean, force: boolean, onStatusChange: OnStatusChange)
     {
         let element = this.rooms.find(r => r.info.host === host && r.info.roomRootKey === key);
         if (!element)
         {
-            onStatusChange("Fetching directory...");
+            await onStatusChange("Fetching directory...");
             await this.fetchDirectory(s => onStatusChange(s));
             element = this.rooms.find(r => r.info.host === host && r.info.roomRootKey === key);
         }
         if (!element) return;
         await this.fetchRoomInternal(element, full, force, onStatusChange);
     }
-    private async fetchRoomInternal(room: Room, full: boolean, force: boolean, onStatusChange: (status: string) => void)
+    private async fetchRoomInternal(room: Room, full: boolean, force: boolean, onStatusChange: OnStatusChange)
     {
-        onStatusChange("Waiting for ongonig fetch to finish...");
+        await onStatusChange("Waiting for ongonig fetch to finish...");
         await Wait.until(() => !room.fetching);
         room.fetching = true;
         if (force || !room.root)
         {
-            onStatusChange("Fetching room root...");
+            await onStatusChange("Fetching room root...");
             const root = await this.hub.remoteRoomController.getRoomRoot(room.info, s => { });
             if (!root)
             {
-                onStatusChange("Setting room as dead...");
+                await onStatusChange("Setting room as dead...");
                 await this.hub.localRoomController.setRoomDead(room.info.host, room.info.roomRootKey, true);
                 this.hub.update();
                 return;
             }
             if (room.info.dead) 
             {
-                onStatusChange("Setting room as active...");
+                await onStatusChange("Setting room as active...");
                 await this.hub.localRoomController.setRoomDead(room.info.host, room.info.roomRootKey, false);
             }
             room.root = root;
         }
         if (typeof room.isMine !== "boolean" || force) 
         {
-            onStatusChange("Determining ownership of room...");
+            await onStatusChange("Determining ownership of room...");
             room.isMine = await this.hub.localRoomController.isMine(room.info);
         }
         if (full)
@@ -125,7 +126,7 @@ export class DataController
                 {
                     room.users = users;
                     await this.hub.localRoomController.createRoomCache(room.info.host, room.info.roomRootKey, room.root, room.users, s => onStatusChange(s));
-                    onStatusChange("Recalculating balances...");
+                    await onStatusChange("Recalculating balances...");
                     this.recalculateBalances(room);
                 }
 
@@ -200,7 +201,7 @@ export class DataController
         }
         return transactionId;
     }
-    public async addTransction(host: string, key: string, data: NewTransactionData, onStatusChange: (status: string) => void)
+    public async addTransction(host: string, key: string, data: NewTransactionData, onStatusChange: OnStatusChange)
     {
         const roomAndUser = this.getRoomAndUser(host, key);
         if (!roomAndUser?.room || !roomAndUser?.userData || !roomAndUser?.userInfo || !roomAndUser.room.root || !roomAndUser.room.users) return;
@@ -218,7 +219,7 @@ export class DataController
 
         await this.saveUser(host, key, roomAndUser, s => onStatusChange(s));
     }
-    public async editTransaction(host: string, key: string, id: string, data: NewTransactionData, onStatusChange: (status: string) => void)
+    public async editTransaction(host: string, key: string, id: string, data: NewTransactionData, onStatusChange: OnStatusChange)
     {
         const roomAndUser = this.getRoomAndUser(host, key);
         if (!roomAndUser?.room || !roomAndUser?.userData || !roomAndUser?.userInfo || !roomAndUser.room.root || !roomAndUser.room.users) return;
@@ -240,7 +241,7 @@ export class DataController
         }
         await this.addTransction(host, key, message, s => onStatusChange(s));
     }
-    public async removeTransaction(host: string, key: string, id: string, onStatusChange: (status: string) => void)
+    public async removeTransaction(host: string, key: string, id: string, onStatusChange: OnStatusChange)
     {
         const roomAndUser = this.getRoomAndUser(host, key);
         if (!roomAndUser?.room || !roomAndUser?.userData || !roomAndUser?.userInfo || !roomAndUser.room.root || !roomAndUser.room.users) return;
@@ -251,7 +252,7 @@ export class DataController
 
         await this.saveUser(host, key, roomAndUser, s => onStatusChange(s));
     }
-    public async changeUserInfo(host: string, key: string, newName: string, phoneNumber: string | undefined, onStatusChange: (status: string) => void)
+    public async changeUserInfo(host: string, key: string, newName: string, phoneNumber: string | undefined, onStatusChange: OnStatusChange)
     {
         const roomAndUser = this.getRoomAndUser(host, key);
         if (!roomAndUser?.room || !roomAndUser?.userData || !roomAndUser?.userInfo || !roomAndUser.room.root || !roomAndUser.room.users) return;
@@ -262,20 +263,20 @@ export class DataController
 
         await this.saveUser(host, key, roomAndUser, s => onStatusChange(s));
     }
-    private async saveUser(host: string, key: string, roomAndUser: ReturnType<typeof this.getRoomAndUser>, onStatusChange: (status: string) => void)
+    private async saveUser(host: string, key: string, roomAndUser: ReturnType<typeof this.getRoomAndUser>, onStatusChange: OnStatusChange)
     {
         if (!roomAndUser?.room || !roomAndUser?.userData || !roomAndUser?.userInfo || !roomAndUser.room.root || !roomAndUser.room.users) return;
-        onStatusChange("Creating anonymous remote...");
+        await onStatusChange("Creating anonymous remote...");
         const remote = await Jormun.getAnonymousRemote(Hub.app, roomAndUser.room.info.host, a => this.hub.alert.handleAlert(a));
 
         const obj = {} as GetResponse;
         obj[roomAndUser.userInfo.userDataKey] = roomAndUser.userData;
 
-        onStatusChange("Saving...");
+        await onStatusChange("Saving...");
         await remote.setAsGuest(obj, roomAndUser.room.root.guestToken);
-        onStatusChange("Recalculating balances...");
+        await onStatusChange("Recalculating balances...");
         this.recalculateBalances(roomAndUser.room);
-        this.hub.localRoomController.createRoomCache(host, key, roomAndUser.room.root, roomAndUser.room.users, s => onStatusChange(s)).then(() => this.hub.update());
+        this.hub.localRoomController.createRoomCache(host, key, roomAndUser.room.root, roomAndUser.room.users, () => { }).then(() => this.hub.update());
         this.hub.update();
     }
 

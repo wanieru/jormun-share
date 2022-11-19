@@ -9,7 +9,7 @@ import { Numbers } from "../../../Utils/Numbers";
 import { B64URL } from "../Utility/B64URL";
 import { ComponentAsync } from "../Utility/ComponentAsync";
 import { Fas } from "../Utility/Icon";
-import { StatusModal } from "./Home/StatusModal";
+import { StatusModal } from "../Utility/StatusModal";
 
 export interface ImagesRouteProps
 {
@@ -36,9 +36,9 @@ export class ImagesRoute extends ComponentAsync<ImagesRouteProps, ImagesRouteSta
     }
     private async fetchData()
     {
-        this.setState({ directory: null, images: [] });
+        await this.setStateAsync({ directory: null, images: [] });
         const directory = await this.props.hub.localRoomController.getDirectory();
-        this.setState({ directory: directory });
+        await this.setStateAsync({ directory: directory });
         for (const fragment of directory.submittedImageFragments ?? [])
         {
             const data = this.props.hub.jormun.me(fragment);
@@ -49,7 +49,7 @@ export class ImagesRoute extends ComponentAsync<ImagesRouteProps, ImagesRouteSta
             const bytes = (image as string).length;
             const kb = bytes / 1000;
             this.state.images.push({ fragment: fragment, data: image, title: `${new Date(raw?.timestamp ?? 0).toLocaleString()} - ${Numbers.round(kb, 0).toLocaleString("en-US")} kb` });
-            this.setState({ images: this.state.images });
+            await this.setStateAsync({ images: this.state.images });
         }
     }
     public renderer(p: ImagesRouteProps, s: ImagesRouteState): ComponentChild
@@ -64,13 +64,13 @@ export class ImagesRoute extends ComponentAsync<ImagesRouteProps, ImagesRouteSta
                         <Button onClick={() => this.delete(image.fragment)}><Fas trash /></Button>
                     </div>
                         {image.title}</CardHeader>
-                    <CardBody><img style={{ maxWidth: "100px", maxHeight: "100px", cursor: "zoom-in" }} src={image.data} onClick={() => this.setState({ previewImage: image.data })} /></CardBody>
+                    <CardBody><img style={{ maxWidth: "100px", maxHeight: "100px", cursor: "zoom-in" }} src={image.data} onClick={() => this.setStateAsync({ previewImage: image.data })} /></CardBody>
                 </Card>
 
             </div>)}
             <StatusModal header="" status={s.previewImage ? <>
                 <img src={s.previewImage} style={{ width: "100%" }} />
-            </> : ""} close={() => this.setState({ previewImage: "" })} />
+            </> : ""} close={() => this.setStateAsync({ previewImage: "" })} />
             <StatusModal header="Deleting..." status={s.deleteStatus} />
         </div>;
     }
@@ -79,20 +79,20 @@ export class ImagesRoute extends ComponentAsync<ImagesRouteProps, ImagesRouteSta
         const data = this.props.hub.jormun.me(fragment);
         if (!data) return;
         if (await this.props.hub.jormun.ask("Delete image?", "Do you want to delete this image? It will become unavailable in the room it was posted...", ["Yes", "No"]) !== 0) return;
-        this.setState({ deleteStatus: "Deleting..." });
+        await this.setStateAsync({ deleteStatus: "Deleting..." });
         await data.remove();
-        this.setState({ deleteStatus: "Fetching directory..." });
+        await this.setStateAsync({ deleteStatus: "Fetching directory..." });
         const directory = await this.props.hub.localRoomController.getDirectory();
         if (directory.submittedImageFragments)
         {
             directory.submittedImageFragments = directory.submittedImageFragments.filter(f => f !== fragment);
         }
-        this.setState({ deleteStatus: "Setting directory..." });
+        await this.setStateAsync({ deleteStatus: "Setting directory..." });
         await this.props.hub.localRoomController.setDirectory(directory, false);
-        this.setState({ deleteStatus: "Synchronizing..." });
+        await this.setStateAsync({ deleteStatus: "Synchronizing..." });
         await this.props.hub.jormun.sync();
-        this.setState({ deleteStatus: "Refetching..." });
+        await this.setStateAsync({ deleteStatus: "Refetching..." });
         await this.fetchData();
-        this.setState({ deleteStatus: "" });
+        await this.setStateAsync({ deleteStatus: "" });
     };
 }

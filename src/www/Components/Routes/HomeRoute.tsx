@@ -19,7 +19,7 @@ import { ComponentAsync } from "../Utility/ComponentAsync";
 import { Fas } from "../Utility/Icon";
 import { JoinRoomModal, JoinRoomModalBridge } from "./Home/JoinRoomModal";
 import { NewRoomModal, NewRoomModalBridge } from "./Home/NewRoomModal";
-import { StatusModal } from "./Home/StatusModal";
+import { StatusModal } from "../Utility/StatusModal";
 
 
 export interface HomeRouteProps
@@ -62,17 +62,17 @@ export class HomeRoute extends ComponentAsync<HomeRouteProps, HomeRouteState>
                 <Container>
                     <Card body style={{ paddingBottom: "50px" }}>
                         <CardText style={{ textAlign: "center" }}>
-                            <Button color="primary" onClick={() => JoinRoomModal.open({ bridge: s.joinRoomModal, setBridge: b => this.setState({ joinRoomModal: b }) })}><Fas plus /> Join Room</Button>
+                            <Button color="primary" onClick={() => JoinRoomModal.open({ bridge: s.joinRoomModal, setBridge: b => this.setStateAsync({ joinRoomModal: b }) })}><Fas plus /> Join Room</Button>
                             <span> </span>
-                            <Button color="primary" disabled={canCreateRoom ? undefined : true} onClick={() => NewRoomModal.open({ bridge: s.newRoomModal, setBridge: b => this.setState({ newRoomModal: b }) })}><Fas plus /> Create Room</Button>
+                            <Button color="primary" disabled={canCreateRoom ? undefined : true} onClick={() => NewRoomModal.open({ bridge: s.newRoomModal, setBridge: b => this.setStateAsync({ newRoomModal: b }) })}><Fas plus /> Create Room</Button>
                             <div>{!canCreateRoom && <>To create a room, you need to be logged in to a Jormun Sync Server. <Link to="/server">See the server-tab for more info.</Link></>}</div>
                         </CardText>
                     </Card>
                 </Container>
             </div>
 
-            <NewRoomModal hub={p.hub} bridge={s.newRoomModal} setBridge={b => this.setState({ newRoomModal: b })} />
-            <JoinRoomModal hub={p.hub} bridge={s.joinRoomModal} setBridge={b => this.setState({ joinRoomModal: b })} />
+            <NewRoomModal hub={p.hub} bridge={s.newRoomModal} setBridge={b => this.setStateAsync({ newRoomModal: b })} />
+            <JoinRoomModal hub={p.hub} bridge={s.joinRoomModal} setBridge={b => this.setStateAsync({ joinRoomModal: b })} />
             <StatusModal header="Leaving..." status={s.leaveStatus} />
             <StatusModal header="Deleting..." status={s.destroyStatus} />
         </>;
@@ -119,15 +119,15 @@ export class HomeRoute extends ComponentAsync<HomeRouteProps, HomeRouteState>
     {
         e.preventDefault();
         e.stopPropagation();
-        await this.props.hub.localRoomController.leaveRoom(room.info.host, room.info.roomRootKey, s => this.setState({ leaveStatus: s }));
-        this.setState({ leaveStatus: "" });
+        await this.props.hub.localRoomController.leaveRoom(room.info.host, room.info.roomRootKey, s => this.setStateAsync({ leaveStatus: s }));
+        await this.setStateAsync({ leaveStatus: "" });
     }
     private clickRoomDestroy = async (room: Room, e: JSX.TargetedMouseEvent<HTMLElement>) =>
     {
         e.preventDefault();
         e.stopPropagation();
-        await this.props.hub.localRoomController.destroyRoom(room.info.host, room.info.roomRootKey, s => this.setState({ destroyStatus: s }));
-        this.setState({ destroyStatus: "" });
+        await this.props.hub.localRoomController.destroyRoom(room.info.host, room.info.roomRootKey, s => this.setStateAsync({ destroyStatus: s }));
+        await this.setStateAsync({ destroyStatus: "" });
     }
 
 }

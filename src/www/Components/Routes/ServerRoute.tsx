@@ -50,7 +50,7 @@ export class ServerRoute extends ComponentAsync<ServerRouteProps, ServerRouteSta
             try
             {
                 const json = await data.json();
-                this.setState({ config: json });
+                await this.setStateAsync({ config: json });
                 return json;
             } catch (e) { }
         }
@@ -65,7 +65,7 @@ export class ServerRoute extends ComponentAsync<ServerRouteProps, ServerRouteSta
         state.password = "";
         state.jormunRemote = remote;
         state.showLoginForm = !this.props.hub.jormun.getStatus().loggedIn;
-        this.setState(state);
+        await this.setStateAsync(state);
     }
     private async login()
     {
@@ -95,13 +95,13 @@ export class ServerRoute extends ComponentAsync<ServerRouteProps, ServerRouteSta
             </> : ""}
             {!p.hub.jormun.getStatus().loggedIn || s.showLoginForm ?
                 <form className="mt-3" onSubmit={async e => { e.preventDefault(); await this.login() }}>
-                    <Textbox type="text" label={<><Fas globe /> Host</>} bridge={{ value: s.host }} setBridge={v => this.setState({ host: v.value })} />
-                    <Textbox type="text" label={<><Fas user /> Username</>} bridge={{ value: s.username }} setBridge={v => this.setState({ username: v.value })} />
-                    <Textbox type="password" label={<><Fas icon="key" /> Password</>} bridge={{ value: s.password }} setBridge={v => this.setState({ password: v.value })} />
+                    <Textbox type="text" label={<><Fas globe /> Host</>} bridge={{ value: s.host }} setBridge={v => this.setStateAsync({ host: v.value })} />
+                    <Textbox type="text" label={<><Fas user /> Username</>} bridge={{ value: s.username }} setBridge={v => this.setStateAsync({ username: v.value })} />
+                    <Textbox type="password" label={<><Fas icon="key" /> Password</>} bridge={{ value: s.password }} setBridge={v => this.setStateAsync({ password: v.value })} />
                     <Button type="submit" color="primary"><Fas right-to-bracket /> Login</Button>
                     {(s?.config?.defaultSyncServer && s?.config.openSignUps) && <><span> </span><Button type="button" color="primary" onClick={() => this.signup()}><Fas user-plus /> Sign Up</Button></>}
                 </form> : ""}
-            {!s.showLoginForm ? <div class="mt-3"><button type="button" class="btn btn-primary" onClick={() => this.setState({ showLoginForm: true })}><Fas globe /> Change server</button></div> : ""}
+            {!s.showLoginForm ? <div class="mt-3"><button type="button" class="btn btn-primary" onClick={() => this.setStateAsync({ showLoginForm: true })}><Fas globe /> Change server</button></div> : ""}
             <div class="mt-3">
                 <button type="button" class="btn btn-primary" onClick={() => p.hub.server.export()}><Fas download /> Export</button>{" "}
                 <button type="button" class="btn btn-primary" onClick={() => p.hub.server.import()}><Fas upload /> Import</button>

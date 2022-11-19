@@ -1,8 +1,9 @@
+import { OnStatusChange } from "./StatusChanging";
 import { Wait } from "./Wait";
 
 export class Images
 {
-    public static async tryUploadPictureToDownsizedB64(maxDimension: number, maxLength: number, onStatusChange: (s: string) => void): Promise<string | null>
+    public static async tryUploadPictureToDownsizedB64(maxDimension: number, maxLength: number, onStatusChange: OnStatusChange): Promise<string | null>
     {
         let result: string | null = null;
         const element = document.createElement("input");
@@ -20,22 +21,25 @@ export class Images
         {
             const fileReader = new FileReader();
             const file = element.files[0];
+            const promise = new Promise<void>(resolve => fileReader.onload = () => resolve());
             fileReader.readAsDataURL(file);
-            onStatusChange("Loading file...");
-            await new Promise<void>(resolve => fileReader.onload = () => resolve());
+            await onStatusChange("Loading file...");
+            await promise;
             let dataUrl = fileReader.result;
 
 
             if (typeof dataUrl === "string" && !!dataUrl)
             {
                 const originalImg = document.createElement("img");
+                const originalImgPromise = new Promise<void>(resolve => originalImg.onload = () => resolve());
                 originalImg.src = dataUrl ?? "";
-                onStatusChange("Parsing image 1/2...");
-                await new Promise<void>(resolve => originalImg.onload = () => resolve());
+                await onStatusChange("Parsing image 1/2...");
+                await originalImgPromise;
                 const originalImage = new Image();
+                const originalImagePromise = new Promise<void>(resolve => originalImage.onload = () => resolve());
                 originalImage.src = dataUrl;
-                onStatusChange("Parsing image 2/2...");
-                await new Promise<void>(resolve => originalImage.onload = () => resolve());
+                await onStatusChange("Parsing image 2/2...");
+                await originalImagePromise;
 
                 let width = originalImage.width;
                 let height = originalImage.height;
@@ -55,7 +59,7 @@ export class Images
 
                 while (dataUrl.length > maxLength)
                 {
-                    onStatusChange(`Downsizing image to ${width}x${height}...`);
+                    await onStatusChange(`Downsizing image to ${width}x${height}...`);
                     const canvas = document.createElement("canvas");
                     canvas.width = width;
                     canvas.height = height;
@@ -70,12 +74,10 @@ export class Images
                 }
                 if (dataUrl.length < maxLength)
                 {
-                    onStatusChange("");
                     result = dataUrl;
                 }
             }
         }
-        onStatusChange("");
         element.remove();
         return result;
     }

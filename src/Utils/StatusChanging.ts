@@ -1,0 +1,1 @@
+export type OnStatusChange = (status: string) => Promise<void> | void;

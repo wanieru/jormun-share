@@ -19,9 +19,9 @@ export class NavBarState
 export class NavBar extends ComponentAsync<NavBarProps, NavBarState>
 {
     state = new NavBarState();
-    private toggleOpen()
+    private toggleOpen = async () =>
     {
-        this.setState({ open: !this.state.open });
+        await this.setStateAsync({ open: !this.state.open });
     }
     renderer(p: NavBarProps, s: NavBarState): ComponentChild
     {

@@ -65,9 +65,9 @@ export class JoinRoomModal extends BridgeAsync<JoinRoomModalProps, JoinRoomModal
         const userId = this.bridge.userId.value;
         const roomId = this.bridge.roomId.value;
         const key = new Key(Hub.app, parseInt(userId), `room_${roomId}`);
-        this.setState({ submitting: true });
+        await this.setStateAsync({ submitting: true });
         await this.props.hub.remoteRoomController.joinRoom(host, key.stringifyRemote(-1), s => this.setBridge({ status: s }));
-        this.setState({ submitting: false });
+        await this.setStateAsync({ submitting: false });
         this.state.submitting = false;
         this.toggle();
     }

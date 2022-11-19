@@ -6,6 +6,7 @@ import { Wait } from "../../../Utils/Wait";
 
 export abstract class ComponentAsync<P, S> extends Component<P, S>
 {
+    private id = Math.random();
     private previouslyRendered: ComponentChild = <></>;
     private queuedRender: ComponentChild | null = null;
     protected isRendering = false;
@@ -27,7 +28,7 @@ export abstract class ComponentAsync<P, S> extends Component<P, S>
         return obj;
     }
 
-    protected async setStateAsync<K extends keyof S>(state: Pick<S, K>)
+    protected setStateAsync = async <K extends keyof S>(state: Pick<S, K>) =>
     {
         const newState = ComponentAsync.change(this.state, state);
         const promise = new Promise<void>(resolve =>

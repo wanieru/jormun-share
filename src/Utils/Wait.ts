@@ -6,16 +6,20 @@ export class Wait
     }
     public static async until(callback: () => boolean)
     {
-        return new Promise<void>(resolve =>
+        if (!callback())
         {
-            const interval = window.setInterval(() =>
+            return new Promise<void>(resolve =>
             {
-                if (callback())
+                const interval = window.setInterval(() =>
                 {
-                    window.clearInterval(interval);
-                    resolve();
-                }
-            }, 1);
-        });
+                    const result = callback();
+                    if (result)
+                    {
+                        window.clearInterval(interval);
+                        resolve();
+                    }
+                }, 1);
+            });
+        }
     }
 }

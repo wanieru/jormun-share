@@ -70,9 +70,9 @@ export class NewRoomModal extends BridgeAsync<NewRoomModalProps, NewRoomModalSta
         {
             return;
         }
-        this.setState({ submitting: true });
+        await this.setStateAsync({ submitting: true });
         await this.props.hub.localRoomController.createRoom(roomName, usernames, s => this.setBridge({ status: s }));
-        this.setState({ submitting: false });
+        await this.setStateAsync({ submitting: false });
         this.state.submitting = false;
         this.toggle();
     }

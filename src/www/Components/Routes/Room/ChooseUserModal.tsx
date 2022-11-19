@@ -55,8 +55,8 @@ export class ChooseUserModal extends ComponentAsync<ChooseUserModalProps, Choose
     private choose = async (user: RoomUserData) =>
     {
         if (this.state.submitting) return;
-        this.setState({ status: "", submitting: true });
-        await this.props.hub.localRoomController.selectUserId(this.props.host, this.props.roomKey, user.userId, s => this.setState({ status: s }));
-        this.setState({ status: "", submitting: false });
+        await this.setStateAsync({ status: "", submitting: true });
+        await this.props.hub.localRoomController.selectUserId(this.props.host, this.props.roomKey, user.userId, s => this.setStateAsync({ status: s }));
+        await this.setStateAsync({ status: "", submitting: false });
     };
 }

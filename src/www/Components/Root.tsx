@@ -15,7 +15,7 @@ import { Fas } from "./Utility/Icon";
 export class Root extends ComponentAsync<{}, View>
 {
     public state = new View();
-    public hub = new Hub([s => this.setState(s)]);
+    public hub = new Hub([s => this.setStateAsync(s)]);
     renderer(p: {}, s: View): ComponentChild
     {
         const navigateTarget = this.hub.navigation.popTarget();

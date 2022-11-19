@@ -7,7 +7,7 @@ import { Hub } from "../../../Hub/Hub";
 import { Wait } from "../../../Utils/Wait";
 import { Textbox, TextboxBridge } from "../Input/Textbox";
 import { Fas } from "../Utility/Icon";
-import { StatusModal } from "./Home/StatusModal";
+import { StatusModal } from "../Utility/StatusModal";
 import { BalanceModal, BalanceModalBridge } from "./Room/BalanceModal";
 import { ChangeNameModal, ChangeNameModalBridge } from "./Room/ChangeNameModal";
 import { ChooseUserModal } from "./Room/ChooseUserModal";
@@ -21,6 +21,7 @@ import { Key } from "jormun-sdk/dist/Key";
 import { B64URL } from "../Utility/B64URL";
 import { Images } from "../../../Utils/Images";
 import { ComponentAsync } from "../Utility/ComponentAsync";
+import { OnStatusChange } from "../../../Utils/StatusChanging";
 
 export function RoomRouteRoot(p: { hub: Hub })
 {
@@ -56,7 +57,7 @@ export class RoomRouteState
     changeRoomNameModal = new ChangeRoomNameModalBridge();
 
     submitImagePreview = "";
-    submitImageAction: ((image: { host: string, key: string }, room: Room, onStatusChange: (s: string) => void) => Promise<void>) | null = null;
+    submitImageAction: ((image: { host: string, key: string }, room: Room, onStatusChange: OnStatusChange) => Promise<void>) | null = null;
 
     transactionShowLimit = 10;
 
@@ -81,8 +82,8 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
         {
             (async () =>
             {
-                await this.props.hub.dataController.fetchRoom(room.info.host, room.info.roomRootKey, true, true, s => this.setState({ fetchStatus: s }));
-                this.setState({ fetchStatus: "" });
+                await this.props.hub.dataController.fetchRoom(room.info.host, room.info.roomRootKey, true, true, s => this.setStateAsync({ fetchStatus: s }));
+                await this.setStateAsync({ fetchStatus: "" });
                 await Wait.secs(0);
                 $('html, body').animate({
                     scrollTop: $(document).height()
@@ -98,7 +99,7 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
         const key = new Key(Hub.app, this.props.userId, `room_${this.props.roomId}`);
         if (!dir.rooms.find(r => r.roomRootKey === key.stringifyLocal() && r.host === this.props.host))
         {
-            this.setState({ redirectToJoin: true });
+            await this.setStateAsync({ redirectToJoin: true });
         }
     }
     public componentWillUnmount()
@@ -133,13 +134,13 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
         return <>
 
             <div style={{ paddingBottom: "350px" }}>
-                {s.transactionShowLimit < room.fullTransactionList.length && <Button color="light" block className="mb-3" onClick={() => { this.setState({ transactionShowLimit: s.transactionShowLimit + 25 }) }}><Fas caret-up /> Show more...</Button>}
+                {s.transactionShowLimit < room.fullTransactionList.length && <Button color="light" block className="mb-3" onClick={() => { this.setStateAsync({ transactionShowLimit: s.transactionShowLimit + 25 }) }}><Fas caret-up /> Show more...</Button>}
                 {room.users && <TransactionList
                     hub={p.hub}
                     room={room}
                     limit={s.transactionShowLimit}
-                    onEdit={e => TransactionModal.edit({ bridge: s.transactionModal, setBridge: b => this.setState({ transactionModal: b }) }, room.info.selectedUserId ?? "", e)}
-                    onPreview={e => TransactionModal.preview({ bridge: s.transactionModal, setBridge: b => this.setState({ transactionModal: b }) }, room.info.selectedUserId ?? "", e)}
+                    onEdit={e => TransactionModal.edit({ bridge: s.transactionModal, setBridge: b => this.setStateAsync({ transactionModal: b }) }, room.info.selectedUserId ?? "", e)}
+                    onPreview={e => TransactionModal.preview({ bridge: s.transactionModal, setBridge: b => this.setStateAsync({ transactionModal: b }) }, room.info.selectedUserId ?? "", e)}
                 />}
                 {!room.users && <div style={{ textAlign: "center" }}><b>Loading...</b></div>}
             </div>
@@ -153,20 +154,20 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
                         </CardHeader>
                         <CardBody style={{ textAlign: "center", paddingBottom: "50px" }}>
                             <div>
-                                <Textbox placeholder="Write a message..." type="text" bridge={s.chatMessage} setBridge={b => this.setState({ chatMessage: b })} suffix={
+                                <Textbox placeholder="Write a message..." type="text" bridge={s.chatMessage} setBridge={b => this.setStateAsync({ chatMessage: b })} suffix={
                                     <>
                                         <Button size="xl" color="primary" title="Send message" onClick={() => this.sendMessage()}><Fas paper-plane /></Button>
                                         {<Button size="xl" color="primary" disabled={!p.hub.jormun.getStatus().loggedIn} title="Send image" onClick={() => this.chooseImageToUpload()}><Fas image /></Button>}
                                     </>
                                 } />
                             </div>
-                            <Button style={bottomButtonStyle} size="xl" color="primary" title="Add outlay" onClick={() => TransactionModal.open({ bridge: s.transactionModal, setBridge: b => this.setState({ transactionModal: b }) }, room.info.selectedUserId ?? "")}><Fas style={{ minWidth: "22.5px" }} receipt /></Button><span> </span>
-                            <Button style={bottomButtonStyle} size="xl" color="primary" title="Settle up" onClick={() => PayModal.open({ bridge: s.payModal, setBridge: b => this.setState({ payModal: b }) })}>
+                            <Button style={bottomButtonStyle} size="xl" color="primary" title="Add outlay" onClick={() => TransactionModal.open({ bridge: s.transactionModal, setBridge: b => this.setStateAsync({ transactionModal: b }) }, room.info.selectedUserId ?? "")}><Fas style={{ minWidth: "22.5px" }} receipt /></Button><span> </span>
+                            <Button style={bottomButtonStyle} size="xl" color="primary" title="Settle up" onClick={() => PayModal.open({ bridge: s.payModal, setBridge: b => this.setStateAsync({ payModal: b }) })}>
                                 {this.owesMoney(room) && <div className="text-danger" style={{ position: "absolute", fontSize: "0.75em", marginTop: "-16px", marginLeft: "25px" }}><Fas circle /></div>}
                                 <Fas hand-holding-dollar />
                             </Button><span> </span>
-                            <Button style={bottomButtonStyle} size="xl" color="light" title="Balance Overview" onClick={() => BalanceModal.open({ bridge: s.balanceModal, setBridge: b => this.setState({ balanceModal: b }) })}><Fas list-ol /></Button><span> </span>
-                            <Button style={bottomButtonStyle} size="xl" color="light" title="Settings" onClick={() => this.setState({ settingsOpen: true })}><Fas gear /></Button><span> </span>
+                            <Button style={bottomButtonStyle} size="xl" color="light" title="Balance Overview" onClick={() => BalanceModal.open({ bridge: s.balanceModal, setBridge: b => this.setStateAsync({ balanceModal: b }) })}><Fas list-ol /></Button><span> </span>
+                            <Button style={bottomButtonStyle} size="xl" color="light" title="Settings" onClick={() => this.setStateAsync({ settingsOpen: true })}><Fas gear /></Button><span> </span>
 
                         </CardBody>
                     </Card>
@@ -174,12 +175,12 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
             </div>
             <this.SettingsModal />
             <this.JoinInfoModal />
-            <BalanceModal room={room} hub={p.hub} bridge={s.balanceModal} setBridge={b => this.setState({ balanceModal: b })} />
-            <ChangeNameModal room={room} hub={p.hub} bridge={s.changeNameModal} setBridge={b => this.setState({ changeNameModal: b })} />
-            <ChangeRoomNameModal room={room} hub={p.hub} bridge={s.changeRoomNameModal} setBridge={b => this.setState({ changeRoomNameModal: b })} />
-            <AddUserModal room={room} hub={p.hub} bridge={s.addUserModal} setBridge={b => this.setState({ addUserModal: b })} />
-            <PayModal room={room} hub={p.hub} bridge={s.payModal} setBridge={b => this.setState({ payModal: b })} />
-            <TransactionModal room={room} hub={p.hub} bridge={s.transactionModal} setBridge={b => this.setState({ transactionModal: b })} />
+            <BalanceModal room={room} hub={p.hub} bridge={s.balanceModal} setBridge={b => this.setStateAsync({ balanceModal: b })} />
+            <ChangeNameModal room={room} hub={p.hub} bridge={s.changeNameModal} setBridge={b => this.setStateAsync({ changeNameModal: b })} />
+            <ChangeRoomNameModal room={room} hub={p.hub} bridge={s.changeRoomNameModal} setBridge={b => this.setStateAsync({ changeRoomNameModal: b })} />
+            <AddUserModal room={room} hub={p.hub} bridge={s.addUserModal} setBridge={b => this.setStateAsync({ addUserModal: b })} />
+            <PayModal room={room} hub={p.hub} bridge={s.payModal} setBridge={b => this.setStateAsync({ payModal: b })} />
+            <TransactionModal room={room} hub={p.hub} bridge={s.transactionModal} setBridge={b => this.setStateAsync({ transactionModal: b })} />
             <ChooseUserModal opened={!room?.info.selectedUserId && !!room?.users && !!room?.info?.host} hub={p.hub} users={room?.users ?? []} host={room?.info.host ?? ""} roomKey={room?.info.roomRootKey ?? ""} />
             <StatusModal header="Changing user" status={s.clearSelectedUserStatus} />
             <StatusModal header="Sending message..." status={s.sendMessageStatus} />
@@ -189,10 +190,10 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
             <StatusModal header="Submit image?" status={!!s.submitImagePreview ? <>
                 <img src={s.submitImagePreview} style={{ width: "100%" }} />
                 <div style={{ float: "right", marginTop: "10px" }}>
-                    <Button color="primary" onClick={() => this.setState({ submitImagePreview: "" })}><Fas cancel /> Cancel</Button><span> </span>
+                    <Button color="primary" onClick={() => this.setStateAsync({ submitImagePreview: "" })}><Fas cancel /> Cancel</Button><span> </span>
                     <Button color="primary" onClick={() => this.submitImagePreviewWrapper(room)}><Fas paper-plane /> Submit</Button>
                 </div>
-            </> : ""} close={() => this.setState({ submitImagePreview: "" })} />
+            </> : ""} close={() => this.setStateAsync({ submitImagePreview: "" })} />
         </>;
     }
 
@@ -205,23 +206,23 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
     {
         const room = this.getRoom();
         if (!room) return;
-        await this.props.hub.localRoomController.selectUserId(room.info.host, room.info.roomRootKey, "", s => this.setState({ clearSelectedUserStatus: s }));
-        this.setState({ clearSelectedUserStatus: "" });
+        await this.props.hub.localRoomController.selectUserId(room.info.host, room.info.roomRootKey, "", s => this.setStateAsync({ clearSelectedUserStatus: s }));
+        await this.setStateAsync({ clearSelectedUserStatus: "" });
     }
 
     private SettingsModal = () =>
     {
         const room = this.getRoom();
-        return <Modal isOpen={this.state.settingsOpen} toggle={() => this.setState({ settingsOpen: !this.state.settingsOpen })}>
-            <ModalHeader toggle={() => this.setState({ settingsOpen: !this.state.settingsOpen })}>
+        return <Modal isOpen={this.state.settingsOpen} toggle={() => this.setStateAsync({ settingsOpen: !this.state.settingsOpen })}>
+            <ModalHeader toggle={() => this.setStateAsync({ settingsOpen: !this.state.settingsOpen })}>
                 Settings
             </ModalHeader>
             <ModalBody>
-                <Button className="mb-3" color="primary" block onClick={() => this.setState({ joinInfoOpen: true })}><Fas tag /> Show Join Info</Button>
+                <Button className="mb-3" color="primary" block onClick={() => this.setStateAsync({ joinInfoOpen: true })}><Fas tag /> Show Join Info</Button>
                 <Button className="mb-3" color="primary" block onClick={() => this.clearSelectedUser()}><Fas user-gear /> Change User</Button>
-                <Button className="mb-3" color="primary" block onClick={() => ChangeNameModal.open({ bridge: this.state.changeNameModal, setBridge: b => this.setState({ changeNameModal: b }) })}><Fas user-pen /> User Profile</Button>
-                {room?.isMine && <Button className="mb-3" color="primary" block onClick={() => AddUserModal.open({ bridge: this.state.addUserModal, setBridge: b => this.setState({ addUserModal: b }) })}><Fas user-plus /> Add user</Button>}
-                {room?.isMine && <Button className="mb-3" color="primary" block onClick={() => ChangeRoomNameModal.open({ bridge: this.state.changeRoomNameModal, setBridge: b => this.setState({ changeRoomNameModal: b }) })}><Fas pen-to-square /> Edit Room Name</Button>}
+                <Button className="mb-3" color="primary" block onClick={() => ChangeNameModal.open({ bridge: this.state.changeNameModal, setBridge: b => this.setStateAsync({ changeNameModal: b }) })}><Fas user-pen /> User Profile</Button>
+                {room?.isMine && <Button className="mb-3" color="primary" block onClick={() => AddUserModal.open({ bridge: this.state.addUserModal, setBridge: b => this.setStateAsync({ addUserModal: b }) })}><Fas user-plus /> Add user</Button>}
+                {room?.isMine && <Button className="mb-3" color="primary" block onClick={() => ChangeRoomNameModal.open({ bridge: this.state.changeRoomNameModal, setBridge: b => this.setStateAsync({ changeRoomNameModal: b }) })}><Fas pen-to-square /> Edit Room Name</Button>}
             </ModalBody>
         </Modal>
     }
@@ -232,8 +233,8 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
         const joinLink = this.props.hub.localRoomController.getJoinURL(room.info.host, room.info.roomRootKey);
         this.generateQrCode(joinLink);
         const key = Key.parse(room.info.roomRootKey, -1);
-        return <Modal isOpen={this.state.joinInfoOpen} toggle={() => this.setState({ joinInfoOpen: !this.state.joinInfoOpen })}>
-            <ModalHeader toggle={() => this.setState({ joinInfoOpen: !this.state.joinInfoOpen })}>
+        return <Modal isOpen={this.state.joinInfoOpen} toggle={() => this.setStateAsync({ joinInfoOpen: !this.state.joinInfoOpen })}>
+            <ModalHeader toggle={() => this.setStateAsync({ joinInfoOpen: !this.state.joinInfoOpen })}>
                 Join Info
             </ModalHeader>
             <ModalBody>
@@ -268,32 +269,32 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
             debtors: [],
             message: msg
         };
-        await this.props.hub.dataController.addTransction(room.info.host, room.info.roomRootKey, data, s => this.setState({ sendMessageStatus: s }));
-        await Wait.secs(0.1);
-        this.setState({ sendMessageStatus: "", chatMessage: { value: "" } });
+        await this.props.hub.dataController.addTransction(room.info.host, room.info.roomRootKey, data, s => this.setStateAsync({ sendMessageStatus: s }));
+        await this.setStateAsync({ sendMessageStatus: "", chatMessage: { value: "" } });
     };
     private submitImagePreviewWrapper = async (room: Room) =>
     {
         if (!this.state.submitImageAction || !this.state.submitImagePreview) return;
         const image = this.state.submitImagePreview;
-        this.setState({ submitImagePreview: "" });
-        this.setState({ uploadImageStatus: "Preparing..." });
-        const data = await this.props.hub.localRoomController.saveImage(image, s => this.setState({ uploadImageStatus: s }));
+        await this.setStateAsync({ submitImagePreview: "" });
+        await this.setStateAsync({ uploadImageStatus: "Preparing..." });
+        const data = await this.props.hub.localRoomController.saveImage(image, s => this.setStateAsync({ uploadImageStatus: s }));
         if (data)
         {
-            this.state.submitImageAction(data, room, s => this.setState({ uploadImageStatus: s }));
+            await this.state.submitImageAction(data, room, s => this.setStateAsync({ uploadImageStatus: s }));
         }
+        await this.setStateAsync({ uploadImageStatus: "" });
     }
     private chooseImageToUpload = async () =>
     {
-        const image = (await Images.tryUploadPictureToDownsizedB64(512, 50000, s => this.setState({ imageProcessingStatus: s }))) ?? "";
+        const image = (await Images.tryUploadPictureToDownsizedB64(512, 50000, s => this.setStateAsync({ imageProcessingStatus: s }))) ?? "";
+        await this.setStateAsync({ imageProcessingStatus: "" });
         if (image)
         {
-            this.setState({ submitImagePreview: image, submitImageAction: (i, r, o) => this.postImageToChat(i, r, o) });
+            await this.setStateAsync({ submitImagePreview: image, submitImageAction: (i, r, o) => this.postImageToChat(i, r, o) });
         }
-        this.setState({ uploadImageStatus: "" });
     };
-    private postImageToChat = async (image: { host: string, key: string }, room: Room, onStatusChange: (status: string) => void) =>
+    private postImageToChat = async (image: { host: string, key: string }, room: Room, onStatusChange: OnStatusChange) =>
     {
         if (!room.info.selectedUserId) return;
         const message: NewTransactionData = {
@@ -311,8 +312,8 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
         const room = this.getRoom();
         if (!room) return;
 
-        await this.props.hub.dataController.fetchRoom(room.info.host, room.info.roomRootKey, true, true, s => this.setState({ refreshStatus: s }));
+        await this.props.hub.dataController.fetchRoom(room.info.host, room.info.roomRootKey, true, true, s => this.setStateAsync({ refreshStatus: s }));
         await Wait.secs(0.1);
-        this.setState({ refreshStatus: "" });
+        await this.setStateAsync({ refreshStatus: "" });
     };
 }
