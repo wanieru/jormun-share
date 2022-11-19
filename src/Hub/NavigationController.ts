@@ -18,7 +18,10 @@ export class NavigationController
     {
         const target = this.target;
         this.target = "";
-        Wait.secs(0).then(() => this.hub.update());
+        if (target !== this.target)
+        {
+            Wait.secs(0).then(() => this.hub.update());
+        }
         return target;
     }
 }
