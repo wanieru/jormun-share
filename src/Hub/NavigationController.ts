@@ -20,7 +20,7 @@ export class NavigationController
         this.target = "";
         if (target !== this.target)
         {
-            Wait.secs(0).then(() => this.hub.update());
+            Wait.secs(0.01).then(() => this.hub.update());
         }
         return target;
     }

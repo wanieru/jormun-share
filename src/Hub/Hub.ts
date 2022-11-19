@@ -21,10 +21,10 @@ export class Hub
     public dataController: DataController;
     public navigation: NavigationController;
 
-    public onUpdate: ((s: View) => void)[] = [];
+    public onUpdate: ((s: View) => Promise<void> | void)[] = [];
     public view: View = new View();
 
-    public constructor(onUpdate: ((s: View) => void)[])
+    public constructor(onUpdate: ((s: View) => Promise<void> | void)[])
     {
         (window as any).hub = this;
         onUpdate.forEach(o => this.onUpdate.push(o));
@@ -61,8 +61,8 @@ export class Hub
     {
         window.onbeforeunload = syncing ? (() => "Sync is in progress.") : null;
     }
-    public update()
+    public async update()
     {
-        this.onUpdate.forEach(o => o(this.view));
+        await Promise.all(this.onUpdate.map(o => o(this.view)));
     }
 }

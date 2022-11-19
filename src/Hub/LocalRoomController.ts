@@ -56,7 +56,7 @@ export class LocalRoomController
             balances: [],
             fullTransactionList: [],
             users: users ?? undefined,
-            root: root
+            root: root,
         }
         this.hub.dataController.recalculateBalances(balanceData);
         if (users)
@@ -75,6 +75,10 @@ export class LocalRoomController
                 {
                     if (transaction.time > room.cache.lastActivity) room.cache.lastActivity = transaction.time;
                 }
+                if (!!user.coverImage && (!room.cache.coverImage || user.coverImage.time > room.cache.coverImage.time))
+                {
+                    room.cache.coverImage = user.coverImage;
+                }
             }
         }
         if (JSON.stringify(room) !== original)
@@ -83,33 +87,34 @@ export class LocalRoomController
             await this.setDirectory(directory, true);
         }
     }
-    public async leaveRoom(host: string, key: string, onStatusChange: OnStatusChange)
+    public async askLeaveRoom(host: string, key: string, onStatusChange: OnStatusChange): Promise<boolean>
     {
         await onStatusChange("Fetching directory...");
         const directory = await this.getDirectory();
         const room = directory.rooms.find(r => r.host === host && r.roomRootKey === key);
-        if (!room) return;
-        if (await this.hub.jormun.ask(`Leave ${room.cache?.name}?`, `Are you sure you want to leave ${room.cache?.name}? You can rejoin it later.`, ["Yes", "No"]) !== 0) return;
+        if (!room) return false;
+        if (await this.hub.jormun.ask(`Leave ${room.cache?.name}?`, `Are you sure you want to leave ${room.cache?.name}? You can rejoin it later.`, ["Yes", "No"]) !== 0) return false;
         directory.rooms = directory.rooms.filter(r => r !== room);
         await onStatusChange("Setting directory...");
         await this.setDirectory(directory, true);
         await this.hub.dataController.fetchDirectory(s => onStatusChange(s));
+        return true;
     }
-    public async destroyRoom(host: string, key: string, onStatusChange: OnStatusChange)
+    public async askDestroyRoom(host: string, key: string, onStatusChange: OnStatusChange): Promise<boolean>
     {
         if (!this.hub.jormun.getStatus().connected) return false;
         const remote = this.hub.jormun.getRemote();
         const status = remote.cachedStatus();
-        if (!status) return;
+        if (!status) return false;
         const parsed = Key.parse(key, status.userId);
-        if (!parsed) return;
+        if (!parsed) return false;
         const data = this.hub.jormun.me(parsed.fragment);
-        if (!data) return;
+        if (!data) return false;
         await onStatusChange("Fetching room root...");
         const value: RoomRoot = await data.get();
         if (value)
         {
-            if (await this.hub.jormun.ask(`Delete ${value.name}?`, `Are you sure you want to delete ${value.name}? It cannot be recovered!`, ["Yes", "No"]) !== 0) return;
+            if (await this.hub.jormun.ask(`Delete ${value.name}?`, `Are you sure you want to delete ${value.name}? It cannot be recovered!`, ["Yes", "No"]) !== 0) return false;
             await onStatusChange("Synchronizing...");
             await this.hub.jormun.sync();
             for (const user of Object.values(value.users))
@@ -136,6 +141,7 @@ export class LocalRoomController
         }
         await this.hub.jormun.sync();
         await this.hub.dataController.fetchDirectory(s => onStatusChange(s));
+        return true;
     }
     public getJoinURL(host: string, key: string)
     {

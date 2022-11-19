@@ -263,6 +263,16 @@ export class DataController
 
         await this.saveUser(host, key, roomAndUser, s => onStatusChange(s));
     }
+    public async updateCoverImage(host: string, key: string, image: { host: string, key: string }, onStatusChange: OnStatusChange)
+    {
+        const roomAndUser = this.getRoomAndUser(host, key);
+        if (!roomAndUser?.room || !roomAndUser?.userData || !roomAndUser?.userInfo || !roomAndUser.room.root || !roomAndUser.room.users) return;
+
+        roomAndUser.userData.coverImage = { host: image.host, key: image.key, time: Date.now() };
+
+        await this.saveUser(host, key, roomAndUser, s => onStatusChange(s));
+        this.hub.localRoomController.createRoomCache(host, key, roomAndUser.room.root, roomAndUser.room.users, () => { });
+    }
     private async saveUser(host: string, key: string, roomAndUser: ReturnType<typeof this.getRoomAndUser>, onStatusChange: OnStatusChange)
     {
         if (!roomAndUser?.room || !roomAndUser?.userData || !roomAndUser?.userInfo || !roomAndUser.room.root || !roomAndUser.room.users) return;

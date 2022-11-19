@@ -6,7 +6,7 @@ export function Toasts(p: { hub: Hub })
 {
     return <Container style={{ position: "absolute", bottom: "70px", left: 0, right: 0 }}>{
         p.hub.view.alerts.toasts.map((t, idx) =>
-            <Toast className="mx-auto mb-3" isOpen={true}>
+            <Toast className="mx-auto mb-3" isOpen={true} key={idx}>
                 <ToastHeader toggle={() => p.hub.alert.resolveToast(t.content)}>{t.timeStr}</ToastHeader>
                 <ToastBody>
                     <strong>{t.content.title}</strong>

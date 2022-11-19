@@ -30,7 +30,6 @@ export class HomeRouteState
 {
     newRoomModal = new NewRoomModalBridge();
     joinRoomModal = new JoinRoomModalBridge();
-    destroyStatus = "";
     leaveStatus = "";
 }
 
@@ -74,7 +73,6 @@ export class HomeRoute extends ComponentAsync<HomeRouteProps, HomeRouteState>
             <NewRoomModal hub={p.hub} bridge={s.newRoomModal} setBridge={b => this.setStateAsync({ newRoomModal: b })} />
             <JoinRoomModal hub={p.hub} bridge={s.joinRoomModal} setBridge={b => this.setStateAsync({ joinRoomModal: b })} />
             <StatusModal header="Leaving..." status={s.leaveStatus} />
-            <StatusModal header="Deleting..." status={s.destroyStatus} />
         </>;
     }
     private roomCard = (p: { room: Room }): JSXInternal.Element =>
@@ -83,17 +81,31 @@ export class HomeRoute extends ComponentAsync<HomeRouteProps, HomeRouteState>
         const name = Strings.elips(p.room.info.cache?.name ?? "", 30);
         const myUserCache = p.room.balances.find(u => u.userId === p.room.info.selectedUserId) ?? p.room.info?.cache?.users.find(u => u.userId === p.room.info.selectedUserId);
         const relevantBalances = (myUserCache?.balances ?? []).filter(b => b.balance !== 0);
+        const cover = p.room.info.cache?.coverImage;
+        const coverUrl = cover ? this.props.hub.dataController.fetchImage(cover.host, cover.key) : "";
+        const backgroundStyle: JSX.CSSProperties = {
+            backgroundImage: (coverUrl ? `url(${coverUrl})` : ""),
+            backgroundPosition: "center",
+            backgroundSize: "cover",
+            backgroundRepaet: "no-repeat",
+            textAlign: "center",
+            color: "white",
+            backgroundColor: "#78c2ad",
+            height: "100px",
+            paddingTop: "30px",
+            fontSize: "1.5em",
+            textShadow: "black 2px 2px"
+        };
         return <>
             <Card className="mb-3" style={{ cursor: !canEnter ? "" : "pointer" }} onClick={(e) => this.clickRoomCard(p.room, e)}>
-                <CardHeader><b>
+                <CardHeader style={backgroundStyle}><b>
                     {(typeof p.room.isMine === "boolean" || p.room.info.dead) && <span style={{ float: "right" }}>
-                        {p.room.isMine && <Button color="danger" onClick={(e: any) => this.clickRoomDestroy(p.room, e)}><Fas bomb /></Button>}
-                        {!p.room.isMine && <Button color="danger" onClick={(e: any) => this.clickRoomRemove(p.room, e)}><Fas times /></Button>}
+                        {!p.room.isMine && !canEnter && <Button color="danger" onClick={(e: any) => this.clickRoomRemove(p.room, e)}><Fas times /></Button>}
                     </span>}
                     {!p.room.info.dead && name}
                     {p.room.info.dead && <span title={`Couldn't connect to room ${p.room.info.cache?.name} at ${p.room.info.host}`} ><s>{name}</s> <Fas cloud-bolt /></span>}
                 </b></CardHeader>
-                <CardBody>
+                <CardBody >
                     {canEnter && <Fas style={{ float: "right" }} angle-right />}
                     {relevantBalances.length > 0 && <div style={{ textAlign: "center" }}>
                         <h5>Your balance:</h5>
@@ -119,15 +131,8 @@ export class HomeRoute extends ComponentAsync<HomeRouteProps, HomeRouteState>
     {
         e.preventDefault();
         e.stopPropagation();
-        await this.props.hub.localRoomController.leaveRoom(room.info.host, room.info.roomRootKey, s => this.setStateAsync({ leaveStatus: s }));
+        await this.props.hub.localRoomController.askLeaveRoom(room.info.host, room.info.roomRootKey, s => this.setStateAsync({ leaveStatus: s }));
         await this.setStateAsync({ leaveStatus: "" });
-    }
-    private clickRoomDestroy = async (room: Room, e: JSX.TargetedMouseEvent<HTMLElement>) =>
-    {
-        e.preventDefault();
-        e.stopPropagation();
-        await this.props.hub.localRoomController.destroyRoom(room.info.host, room.info.roomRootKey, s => this.setStateAsync({ destroyStatus: s }));
-        await this.setStateAsync({ destroyStatus: "" });
     }
 
 }

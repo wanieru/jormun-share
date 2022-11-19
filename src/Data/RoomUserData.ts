@@ -7,4 +7,5 @@ export interface RoomUserData
     phoneNumber?: string;
     userId: UserId;
     transactions: RoomTransaction[];
+    coverImage?: { host: string, key: string, time: number }
 }

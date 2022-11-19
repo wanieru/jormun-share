@@ -17,6 +17,7 @@ export interface RoomInfo
             }[];
         }[],
         timestamp: number,
-        lastActivity: number
+        lastActivity: number,
+        coverImage?: { host: string, key: string, time: number }
     }
 }

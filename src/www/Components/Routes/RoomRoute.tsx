@@ -22,6 +22,7 @@ import { B64URL } from "../Utility/B64URL";
 import { Images } from "../../../Utils/Images";
 import { ComponentAsync } from "../Utility/ComponentAsync";
 import { OnStatusChange } from "../../../Utils/StatusChanging";
+import { NavigationController } from "../../../Hub/NavigationController";
 
 export function RoomRouteRoot(p: { hub: Hub })
 {
@@ -43,6 +44,10 @@ export class RoomRouteState
     refreshStatus = "";
     clearSelectedUserStatus = "";
     imageProcessingStatus = "";
+    coverImageProcessingStatus = "";
+
+    destroyStatus = "";
+    leaveStatus = "";
     uploadImageStatus = "";
     qrCode = { link: "", done: false, qr: "" }
     chatMessage = new TextboxBridge();
@@ -136,6 +141,7 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
         }
         const selectedUser = this.getSelectedUser();
         const bottomButtonStyle: JSX.CSSProperties = { fontSize: "1.25em" };
+
         return <>
 
             <div style={{ paddingBottom: "350px" }}>
@@ -191,6 +197,9 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
             <StatusModal header="Sending message..." status={s.sendMessageStatus} />
             <StatusModal header="Refreshing..." status={s.refreshStatus} />
             <StatusModal header="Loading image..." status={s.imageProcessingStatus} />
+            <StatusModal header="Loading image..." status={s.coverImageProcessingStatus} />
+            <StatusModal header="Deleting..." status={s.destroyStatus} />
+            <StatusModal header="Leaving..." status={s.leaveStatus} />
             <StatusModal header="Submitting image..." status={s.uploadImageStatus} />
             <StatusModal header="Submit image?" status={!!s.submitImagePreview ? <>
                 <img src={s.submitImagePreview} style={{ width: "100%" }} />
@@ -226,8 +235,11 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
                 <Button className="mb-3" color="primary" block onClick={() => this.setStateAsync({ joinInfoOpen: true })}><Fas tag /> Show Join Info</Button>
                 <Button className="mb-3" color="primary" block onClick={() => this.clearSelectedUser()}><Fas user-gear /> Change User</Button>
                 <Button className="mb-3" color="primary" block onClick={() => ChangeNameModal.open({ bridge: this.state.changeNameModal, setBridge: b => this.setStateAsync({ changeNameModal: b }) })}><Fas user-pen /> User Profile</Button>
+                {<Button className="mb-3" color="primary" disabled={!this.props.hub.jormun.getStatus().loggedIn} block onClick={() => this.chooseCoverImageToUpload()}><Fas image /> Change Room Image</Button>}
                 {room?.isMine && <Button className="mb-3" color="primary" block onClick={() => AddUserModal.open({ bridge: this.state.addUserModal, setBridge: b => this.setStateAsync({ addUserModal: b }) })}><Fas user-plus /> Add user</Button>}
                 {room?.isMine && <Button className="mb-3" color="primary" block onClick={() => ChangeRoomNameModal.open({ bridge: this.state.changeRoomNameModal, setBridge: b => this.setStateAsync({ changeRoomNameModal: b }) })}><Fas pen-to-square /> Edit Room Name</Button>}
+                {room?.isMine && <Button className="mb-3" color="danger" block onClick={(e: any) => this.clickRoomDestroy(room, e)}><Fas bomb /> Destroy Room</Button>}
+                {room && !room?.isMine && <Button className="mb-3" color="danger" block onClick={(e: any) => this.clickRoomRemove(room, e)}><Fas times /> Leave Room</Button>}
             </ModalBody>
         </Modal>
     }
@@ -312,6 +324,39 @@ export class RoomRoute extends ComponentAsync<RoomRouteProps, RoomRouteState>
         }
         await this.props.hub.dataController.addTransction(room.info.host, room.info.roomRootKey, message, s => onStatusChange(s));
     }
+    private chooseCoverImageToUpload = async () =>
+    {
+        const image = (await Images.tryUploadPictureToDownsizedB64(512, 1000000, s => this.setStateAsync({ coverImageProcessingStatus: s }))) ?? "";
+        await this.setStateAsync({ coverImageProcessingStatus: "" });
+        if (image)
+        {
+            await this.setStateAsync({
+                submitImagePreview: image, submitImageAction: async (image, room, onStatusChange) =>
+                {
+                    await this.props.hub.dataController.updateCoverImage(room.info.host, room.info.roomRootKey, image, onStatusChange);
+                }
+            });
+        }
+    }
+
+
+    private clickRoomDestroy = async (room: Room, e: JSX.TargetedMouseEvent<HTMLElement>) =>
+    {
+        e.preventDefault();
+        e.stopPropagation();
+        const destroyed = await this.props.hub.localRoomController.askDestroyRoom(room.info.host, room.info.roomRootKey, s => this.setStateAsync({ destroyStatus: s }));
+        await this.setStateAsync({ destroyStatus: "" });
+        if (destroyed) this.props.hub.navigation.setTarget("/");
+    }
+    private clickRoomRemove = async (room: Room, e: JSX.TargetedMouseEvent<HTMLElement>) =>
+    {
+        e.preventDefault();
+        e.stopPropagation();
+        const left = await this.props.hub.localRoomController.askLeaveRoom(room.info.host, room.info.roomRootKey, s => this.setStateAsync({ leaveStatus: s }));
+        await this.setStateAsync({ leaveStatus: "" });
+        if (left) this.props.hub.navigation.setTarget("/");
+    }
+
     private refresh = async () =>
     {
         const room = this.getRoom();
