@@ -59,7 +59,7 @@ export class Images
 
                 while (dataUrl.length > maxLength)
                 {
-                    await onStatusChange(`Downsizing image to ${width}x${height}...`);
+                    await onStatusChange(`Downscaling image to ${width}x${height}...`);
                     const canvas = document.createElement("canvas");
                     canvas.width = width;
                     canvas.height = height;

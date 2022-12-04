@@ -1,0 +1,48 @@
+{
+  "name": "Build",
+  "on": { "push": { "branches": ["main"] } },
+  "jobs":
+    {
+      "build":
+        {
+          "runs-on": "ubuntu-latest",
+          "steps":
+            [
+              {
+                "uses": "actions/checkout@master",
+                "with": { "persist-credentials": false, "fetch-depth": 0 },
+              },
+
+              {
+                "uses": "actions/setup-node@v1",
+                "with": { "node-version": 15 },
+              },
+              {
+                "uses": "actions/cache@v2",
+                "id": "cache-npm-ui",
+                "with":
+                  {
+                    "path": "~/.npm",
+                    "key": "${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}",
+                    "restore-keys": "${{ runner.os }}-node-\n",
+                  },
+              },
+              {
+                "name": "npm install dependencies",
+                "run": "npm ci --only=production\n",
+              },
+              { "name": "npm build", "run": "npm run build\n" },
+              {
+                "name": "Commit & Push changes",
+                "uses": "actions-js/push@v1.3",
+                "with":
+                  {
+                    "github_token": "${{ secrets.GITHUB_TOKEN }}",
+                    "branch": "main",
+                    "empty": true,
+                  },
+              },
+            ],
+        },
+    },
+}
