@@ -12,17 +12,10 @@ export abstract class ComponentAsync<P, S> extends Component<P, S>
 
     public static change<S, K extends keyof S>(old: S, change: Pick<S, K>): S
     {
-        const obj: S = {} as S;
-        for (const key in old)
+        const obj: S = { ...old } as S;
+        for (const key in change)
         {
-            if (change.hasOwnProperty(key))
-            {
-                obj[key] = (change as any)[key];
-            }
-            else
-            {
-                obj[key] = old[key];
-            }
+            obj[key] = change[key];
         }
         return obj;
     }
