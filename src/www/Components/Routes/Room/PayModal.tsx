@@ -15,6 +15,7 @@ import { Textbox, TextboxBridge } from "../../Input/Textbox";
 import { Toggle } from "../../Input/Toggle";
 import { BridgeAsync, BridgeParams } from "../../Utility/BridgeAsync";
 import { Far, Fas } from "../../Utility/Icon";
+import { StatusModal } from "../../Utility/StatusModal";
 
 export interface PayCreditor
 {
@@ -44,6 +45,7 @@ export class PayModalBridge
     remainingDebt: number = 0;
     submitting = false;
     status = "";
+    mobilePayQR = "";
 }
 
 export class PayModal extends BridgeAsync<PayModalProps, PayModalState, PayModalBridge>
@@ -84,8 +86,10 @@ export class PayModal extends BridgeAsync<PayModalProps, PayModalState, PayModal
                         {!b.convert && <Toggle label="Settle in Different Currency" bridge={{ checked: false }} setBridge={(b) => this.setBridge({ convert: b.checked, toCurrency: { current: this.props.hub.dataController.getLastCurrency() } })} />}
                         {b.convert && <Textbox prefix={
                             <Dropdown style={{ maxWidth: "100px" }} options={this.getCurrencies()} bridge={this.bridge.toCurrency} setBridge={b => { this.setBridge({ toCurrency: b }); }} />
-                        } type="number" placeholder={`${PayModal.convertFromAmount} ${b.fromCurrency.current} = ?? ${b.toCurrency.current}`} label="Currency To Pay In" bridge={b.conversion} setBridge={b => this.setBridge({ conversion: b })} suffix={<Button color="primary" onClick={() => this.openConversionRate()}><Fas arrow-trend-up /></Button>} />}
-                        <h6 style={{ marginTop: "10px" }}>You owe: {Currencies.formatAmount(-this.balanceInCurrency() * this.getPayScaling(), this.getPayCurrency())} <Fas arrow-right /> {Currencies.formatAmount(b.remainingDebt * this.getPayScaling(), this.getPayCurrency())}</h6>
+                        } type="number" placeholder={`${PayModal.convertFromAmount} ${b.fromCurrency.current} = ?? ${b.toCurrency.current}`} label={<>
+                            <div style={{ cursor: "pointer" }} onClick={() => this.showPayInDirrectCurrencyHelp()}>Currency To Pay In <span className="text-info"><Fas circle-info /></span></div>
+                        </>} bridge={b.conversion} setBridge={b => this.setBridge({ conversion: b })} suffix={<Button color="primary" onClick={() => this.openConversionRate()}><Fas magnifying-glass-dollar /></Button>} />}
+                        <h6 style={{ marginTop: "10px" }}>You will owe: {Currencies.formatAmount(b.remainingDebt * this.getPayScaling(), this.getPayCurrency())}</h6>
                         <h5>Share</h5>
                         {b.creditors && b.creditors.map(u => this.creditorElement(u))}
                         <div style={{ float: "right" }}>
@@ -97,7 +101,12 @@ export class PayModal extends BridgeAsync<PayModalProps, PayModalState, PayModal
                     </>}
                 </ModalBody>
             </Modal>
+            {this.bridge.mobilePayQR && <StatusModal header="Mobile Pay QR Code" status={<img src={this.bridge.mobilePayQR} style={{ width: "100%" }} />} close={() => this.setBridge({ mobilePayQR: "" })} />}
         </>;
+    }
+    private async showPayInDirrectCurrencyHelp()
+    {
+        await this.props.hub.jormun.ask("Settling in different currency", "In order to settle up in a different currency, enter the conversion rate between the original currency and the currency to settle up in.\n\nYou can find this by clicking the magnifying-glass-icon. For example, settling between US Dollars and British Pounds, the conversion rate might be 100 USD = 82.96 GBP.\n\n In that case, you would enter 82.96 in this box to see how much you owed in GBP.", ["Got it"]);
     }
     private openConversionRate = () =>
     {
@@ -132,15 +141,30 @@ export class PayModal extends BridgeAsync<PayModalProps, PayModalState, PayModal
                 {locked && <Fas lock />}
             </div>
         </>
-        return <Textbox disabled={!selected || undefined} prefix={`${Strings.elips(user.name, 10)}: ${Currencies.formatAmount(user.max * this.getPayScaling(), this.getPayCurrency())}`} suffix={suffix} type="number" min={0.01} decimals={2} bridge={{ value: (Currencies.parse(user.amount * this.getPayScaling(), this.getPayCurrency())).toString() }} setBridge={a => this.changeUserAmount(user, parseFloat(a.value) / this.getPayScaling())} />
+        return <Textbox disabled={!selected || undefined} prefix={`${Strings.elips(user.name, 10)}`} suffix={suffix} type="number" min={0.01} decimals={2} bridge={{ value: (Currencies.parse(user.amount * this.getPayScaling(), this.getPayCurrency())).toString() }} setBridge={a => this.changeUserAmount(user, parseFloat(a.value) / this.getPayScaling())} />
     }
     private async mobilePay(user: PayCreditor, userData: RoomUserData)
     {
         if (!this.bridge.creditors) return;
         if (!userData.phoneNumber) return;
         const amount = Currencies.parse(user.amount * this.getPayScaling(), this.getPayCurrency());
-        await this.props.hub.jormun.ask("MobilePay", `Make sure the money is going to the right person before transferring any money!`, ["Open MobilePay"]);
-        window.open(`mobilepay://send?phone=${userData.phoneNumber ?? ""}&comment=${Hub.appTitle}&amount=${amount}`, "_blank");
+        const link = `mobilepay://send?phone=${userData.phoneNumber ?? ""}&comment=${Hub.appTitle}&amount=${amount}`;
+        const types = ["Cancel", "Show QR Code", "Open MobilePay"];
+        const type = await this.props.hub.jormun.ask("MobilePay", `Make sure the money is going to the right person before transferring any money!`, types);
+        if (type === 1)
+        {
+            //QR Code
+            await this.showMobilePayQRCode(link);
+        }
+        else if (type === 2)
+        {
+            //Deeplink
+            window.open(link, "_blank");
+        }
+        else
+        {
+            return;
+        }
         const success = (await this.props.hub.jormun.ask("MobilePay", "Did the money transfer go through?", ["Yes", "No"])) === 0;
         if (!success) return;
         user.locked = true;
@@ -155,6 +179,13 @@ export class PayModal extends BridgeAsync<PayModalProps, PayModalState, PayModal
         this.setBridge({ creditors: this.bridge.creditors });
         await Wait.secs(0);
         await this.pay();
+    }
+    private async showMobilePayQRCode(link: string)
+    {
+        await Wait.until(() => !this.bridge.mobilePayQR);
+        const qr = await this.props.hub.localRoomController.getJoinQRCode(link);
+        await this.setBridge({ mobilePayQR: qr });
+        await Wait.until(() => !this.bridge.mobilePayQR);
     }
     private toggleUserSelectedState = (user: PayCreditor) =>
     {
