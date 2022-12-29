@@ -1,7 +1,7 @@
 import { Jormun, JormunRemote } from "jormun-sdk/dist/Jormun";
 import { Key } from "jormun-sdk/dist/Key";
 import { Component, ComponentChild } from "preact";
-import { Button, Modal, ModalBody, ModalHeader } from "reactstrap";
+import { Button, InputGroupText, Modal, ModalBody, ModalHeader } from "reactstrap";
 import { NewTransactionData, RoomTransaction } from "../../../../Data/RoomTransaction";
 import { RoomTransactionDebtor } from "../../../../Data/RoomTransactionDebtor";
 import { RoomUserData } from "../../../../Data/RoomUserData";
@@ -84,11 +84,19 @@ export class PayModal extends BridgeAsync<PayModalProps, PayModalState, PayModal
                     {negativeCurrencies.length > 0 && <>
                         {this.currencyDropdown(negativeCurrencies.map(c => c.currency))}
                         {!b.convert && <Toggle label="Settle in Different Currency" bridge={{ checked: false }} setBridge={(b) => this.setBridge({ convert: b.checked, toCurrency: { current: this.props.hub.dataController.getLastCurrency() } })} />}
-                        {b.convert && <Textbox prefix={
-                            <Dropdown style={{ maxWidth: "100px" }} options={this.getCurrencies()} bridge={this.bridge.toCurrency} setBridge={b => { this.setBridge({ toCurrency: b }); }} />
-                        } type="number" placeholder={`${PayModal.convertFromAmount} ${b.fromCurrency.current} = ?? ${b.toCurrency.current}`} label={<>
+                        {b.convert && <Textbox align={"right"} prefix={
+                            <>
+                                <Dropdown style={{ maxWidth: "100px" }} options={this.getCurrencies()} bridge={this.bridge.toCurrency} setBridge={b => { this.setBridge({ toCurrency: b }); }} />
+                                <InputGroupText>{`${PayModal.convertFromAmount} ${b.fromCurrency.current} = `}</InputGroupText>
+                            </>
+                        } type="number" placeholder={`??`} label={<>
                             <div style={{ cursor: "pointer" }} onClick={() => this.showPayInDirrectCurrencyHelp()}>Currency To Pay In <span className="text-info"><Fas circle-info /></span></div>
-                        </>} bridge={b.conversion} setBridge={b => this.setBridge({ conversion: b })} suffix={<Button color="primary" onClick={() => this.openConversionRate()}><Fas magnifying-glass-dollar /></Button>} />}
+                        </>} bridge={b.conversion} setBridge={b => this.setBridge({ conversion: b })} suffix={
+                            <>
+                                <InputGroupText>{b.toCurrency.current}</InputGroupText>
+                                <Button color="primary" onClick={() => this.openConversionRate()}><Fas magnifying-glass-dollar /></Button>
+                            </>
+                        } />}
                         <h6 style={{ marginTop: "10px" }}>You will owe: {Currencies.formatAmount(b.remainingDebt * this.getPayScaling(), this.getPayCurrency())}</h6>
                         <h5>Share</h5>
                         {b.creditors && b.creditors.map(u => this.creditorElement(u))}
@@ -307,6 +315,7 @@ export class PayModal extends BridgeAsync<PayModalProps, PayModalState, PayModal
                 debtors: [{
                     user: creditor.user,
                     locked: false,
+                    percentage: false,
                     amount: creditor.amount
                 }]
             };
