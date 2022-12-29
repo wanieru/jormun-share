@@ -15,7 +15,8 @@ export interface TextboxProps
     suffix?: string | JSXInternal.Element,
     min?: number
     max?: number
-    disabled?: boolean
+    disabled?: boolean,
+    align?: "left" | "center" | "right"
 }
 export class TextboxBridge 
 {
@@ -35,7 +36,7 @@ export class Textbox extends BridgeAsync<TextboxProps, TextboxState, TextboxBrid
                 <InputGroup>
                     {!!this.props.prefix && typeof this.props.prefix === "string" && <InputGroupText>{this.props.prefix}</InputGroupText>}
                     {!!this.props.prefix && typeof this.props.prefix !== "string" && this.props.prefix}
-                    <FormInput disabled={this.props.disabled} type={this.props.type} name={this.props.id} id={this.props.id} placeholder={this.props.placeholder} value={this.bridge.value} step={this.props.decimals ? (10 ** -this.props.decimals) : undefined} min={this.props.min} max={this.props.max} onChange={(e: any) => this.setBridge({ value: e.target.value })} />
+                    <FormInput style={{ textAlign: this.props.align ?? "left" }} disabled={this.props.disabled} type={this.props.type} name={this.props.id} id={this.props.id} placeholder={this.props.placeholder} value={this.bridge.value} step={this.props.decimals ? (10 ** -this.props.decimals) : undefined} min={this.props.min} max={this.props.max} onChange={(e: any) => this.setBridge({ value: e.target.value })} />
                     {!!this.props.suffix && typeof this.props.suffix === "string" && <InputGroupText>{this.props.suffix}</InputGroupText>}
                     {!!this.props.suffix && typeof this.props.suffix !== "string" && this.props.suffix}
                 </InputGroup>

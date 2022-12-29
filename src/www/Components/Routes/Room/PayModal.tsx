@@ -307,6 +307,7 @@ export class PayModal extends BridgeAsync<PayModalProps, PayModalState, PayModal
                 debtors: [{
                     user: creditor.user,
                     locked: false,
+                    percentage: false,
                     amount: creditor.amount
                 }]
             };
