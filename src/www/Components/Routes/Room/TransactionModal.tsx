@@ -40,6 +40,7 @@ export class TransactionModalBridge
     message = new TextboxBridge();
     submitting = false;
     status = "";
+    lockDefaults = true;
 }
 
 export class TransactionModal extends BridgeAsync<TransactionModalProps, TransactionModalState, TransactionModalBridge>
@@ -218,8 +219,9 @@ export class TransactionModal extends BridgeAsync<TransactionModalProps, Transac
         {
             debtorEntry.locked = true;
         }
+        this.bridge.lockDefaults = false;
         this.recalculateSharing();
-        this.setBridge({ debtors: this.bridge.debtors });
+        this.setBridge({ debtors: this.bridge.debtors, lockDefaults: false });
     }
     private toggleUserSelectedState = (userId: string) =>
     {
@@ -243,8 +245,9 @@ export class TransactionModal extends BridgeAsync<TransactionModalProps, Transac
         {
             this.bridge.debtors = this.bridge.debtors.filter(d => d.user !== userId);
         }
+        this.bridge.lockDefaults = false;
         this.recalculateSharing();
-        this.setBridge({ debtors: this.bridge.debtors });
+        this.setBridge({ debtors: this.bridge.debtors, lockDefaults: false });
     }
     private toggleUserPercentageState = (userId: string) =>
     {
@@ -252,8 +255,9 @@ export class TransactionModal extends BridgeAsync<TransactionModalProps, Transac
         const debtorEntry = this.bridge.debtors?.find(d => d.user === userId);
         if (!debtorEntry) return;
         debtorEntry.percentage = !debtorEntry.percentage;
+        this.bridge.lockDefaults = false;
         this.recalculateSharing();
-        this.setBridge({ debtors: this.bridge.debtors });
+        this.setBridge({ debtors: this.bridge.debtors, lockDefaults: false });
     }
 
     private recalculateSharing = async (newAmountString?: string | undefined) =>
@@ -268,8 +272,9 @@ export class TransactionModal extends BridgeAsync<TransactionModalProps, Transac
         }
         const newAmount = this.getAmount();
         this.bridge.amount.value = newAmount.toString();
+        if (newAmount <= 0) this.bridge.lockDefaults = true;
 
-        if (newAmount > 0 && (this.bridge.lastAmount <= 0 || Number.isNaN(this.bridge.lastAmount)))
+        if (newAmount > 0 && (this.bridge.lastAmount <= 0 || Number.isNaN(this.bridge.lastAmount) || this.bridge.lockDefaults))
         {
             await this.applyDefaultPercentages(false);
         }
@@ -306,7 +311,13 @@ export class TransactionModal extends BridgeAsync<TransactionModalProps, Transac
         }
 
         this.recalculating = false;
-        this.setBridge({ debtors: this.bridge.debtors, amount: this.bridge.amount, lastAmount: this.getAmount(), defaultPercentages: this.bridge.defaultPercentages });
+        this.setBridge({
+            debtors: this.bridge.debtors,
+            amount: this.bridge.amount,
+            lastAmount: this.getAmount(),
+            defaultPercentages: this.bridge.defaultPercentages,
+            lockDefaults: this.bridge.lockDefaults
+        });
     }
     private getAmount = () =>
     {
@@ -405,6 +416,7 @@ export class TransactionModal extends BridgeAsync<TransactionModalProps, Transac
         params.bridge.message.value = "";
         params.bridge.previewing = false;
         params.bridge.status = "";
+        params.bridge.lockDefaults = true;
 
         params.setBridge(params.bridge);
     }
@@ -422,6 +434,7 @@ export class TransactionModal extends BridgeAsync<TransactionModalProps, Transac
         params.bridge.previewing = false;
         params.bridge.lastAmount = transaction.amount;
         params.bridge.status = "";
+        params.bridge.lockDefaults = true;
 
         params.setBridge(params.bridge);
     }
@@ -439,6 +452,7 @@ export class TransactionModal extends BridgeAsync<TransactionModalProps, Transac
         params.bridge.previewing = true;
         params.bridge.lastAmount = transaction.amount;
         params.bridge.status = "";
+        params.bridge.lockDefaults = true;
 
         params.setBridge(params.bridge);
     }
