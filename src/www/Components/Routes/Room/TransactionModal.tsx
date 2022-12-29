@@ -277,6 +277,7 @@ export class TransactionModal extends BridgeAsync<TransactionModalProps, Transac
         if (newAmount > 0 && (this.bridge.lastAmount <= 0 || Number.isNaN(this.bridge.lastAmount) || this.bridge.lockDefaults))
         {
             await this.applyDefaultPercentages(false);
+            this.bridge.lastAmount = 0;
         }
 
         if (!this.bridge.debtors) this.bridge.debtors = [];
