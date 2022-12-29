@@ -10,6 +10,8 @@ import { RemoteRoomController } from "./RemoteRoomController";
 import { Room } from "./DataController";
 import { B64URL } from "../www/Components/Utility/B64URL";
 import { OnStatusChange } from "../Utils/StatusChanging";
+import { RoomTransactionDebtor } from "../Data/RoomTransactionDebtor";
+import { Numbers } from "../Utils/Numbers";
 
 declare class QRCode
 {
@@ -182,6 +184,23 @@ export class LocalRoomController
         const key = Key.parse(info.roomRootKey, -1);
         if (!key) return false;
         return info.host === hashedRemote.host && key.userId === status.userId;
+    }
+
+    public async getDefaultPercentages(host: string, key: string)
+    {
+        const data: RoomTransactionDebtor[] | undefined = await this.hub.jormun.me(`percentage_defaults_${host}_${key}`)?.get();
+        if (!data) return [] as RoomTransactionDebtor[];
+        return data;
+    }
+    public async setDefaultPercentages(host: string, key: string, amount: number, debtors: RoomTransactionDebtor[])
+    {
+        debtors = debtors.filter(d => !!d.percentage);
+        debtors.forEach(d =>
+        {
+            d.locked = true;
+            d.amount = Numbers.round((d.amount / amount), 4);
+        });
+        await (await this.hub.jormun.add(`percentage_defaults_${host}_${key}`, debtors)).set(debtors);
     }
 
     public async createRoom(roomName: string, users: string[], onStatusChange: OnStatusChange)
