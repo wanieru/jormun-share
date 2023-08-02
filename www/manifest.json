@@ -1,0 +1,12 @@
+{
+    "name": "Billshare",
+    "start_url": "/",
+    "icons": [
+        {
+            "src": "./img/icon.png",
+            "type": "image/png",
+            "sizes": "256x256"
+        }
+    ],
+    "display": "standalone"
+}
